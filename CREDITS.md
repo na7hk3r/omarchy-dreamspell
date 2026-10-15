@@ -113,3 +113,10 @@ Twelve is `lajkaʼa`, the classical form, rather than the also-current
 `kaʼalajun`; six and seven are the short `wak` and `wuk` rather than `wáak` and
 `úuk`. The glottal stop is U+02BC and not an apostrophe, and a test pins every
 code point so a lookalike character cannot slip in unnoticed.
+
+## Preview banner — `preview.png`
+
+The image the repository and the marketplace listing show. It frames a real
+capture of the running panel on a generated background, so it reproduces the
+seal glyphs illustrated above and stays under **CC BY-SA 4.0**, with the
+attribution given in that section. The panel is a capture, not a mock-up.
