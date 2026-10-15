@@ -473,6 +473,8 @@ Panel {
           //      numeral, which is what a Dreamspell tone is written as. The
           //      bundled artwork is a square cartouche, so the plaque follows the
           //      drawing rather than the round seat a bare number would get.
+          //      L33: the tone sits right after the title instead of at the far
+          //      edge, so the pair reads as one compact heading.
           Item {
             width: parent.width
             height: Math.max(plaque.height, Math.max(heroLabels.implicitHeight, toneMark.implicitHeight))
@@ -496,7 +498,8 @@ Panel {
 
             Column {
               id: toneMark
-              anchors.right: parent.right
+              anchors.left: heroLabels.right
+              anchors.leftMargin: Style.space(24)
               anchors.verticalCenter: parent.verticalCenter
               width: Style.space(72)
               spacing: Style.space(1)
@@ -528,8 +531,6 @@ Panel {
               id: heroLabels
               anchors.left: plaque.right
               anchors.leftMargin: Style.space(16)
-              anchors.right: toneMark.left
-              anchors.rightMargin: Style.space(12)
               anchors.verticalCenter: parent.verticalCenter
               spacing: Style.space(2)
 
