@@ -545,8 +545,6 @@ Panel {
 
               Text {
                 textFormat: Text.PlainText
-                width: parent.width
-                elide: Text.ElideRight
                 text: root.reading
                   ? root.reading.color + " " + root.reading.toneName + " " + root.reading.sealName
                   : ""
