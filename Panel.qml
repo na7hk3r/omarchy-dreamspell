@@ -145,6 +145,22 @@ Panel {
     return name ? "plasma/" + String(name).toLowerCase() + ".svg" : ""
   }
 
+  // ---- Hover tooltips (L36): every seal glyph reports itself here and one
+  //      bubble at the panel root shows its name. The short delay keeps the
+  //      bubble from flickering while the pointer crosses the strip.
+  property Item glyphTipTarget: null
+
+  function glyphTipEnter(glyph) {
+    if (!glyph.tip) return
+    glyphTipTimer.target = glyph
+    glyphTipTimer.restart()
+  }
+
+  function glyphTipLeave(glyph) {
+    if (glyphTipTimer.target === glyph) glyphTipTimer.stop()
+    if (root.glyphTipTarget === glyph) root.glyphTipTarget = null
+  }
+
   // ---- Rows are built here rather than in the QML body so the layout below
   //      stays a plain list of sections.
   readonly property var dayRows: {
@@ -168,6 +184,7 @@ Panel {
         label: "YEAR BEARER",
         sealColor: bearer.color,
         asset: bearer.asset,
+        tip: Dreamspell.sealFullName(bearer.seal),
         value: "Kin " + bearer.kin + " \u00b7 " + bearer.color + " " + bearer.toneName + " " + bearer.sealName
       },
       { label: "YEAR", value: bearer.startYear + " \u2013 " + (bearer.startYear + 1) },
@@ -201,6 +218,7 @@ Panel {
         label: "WAVESPELL",
         sealColor: d.wavespell.color,
         asset: d.wavespell.asset,
+        tip: Dreamspell.sealFullName(d.wavespell.seal),
         value: d.wavespell.sealName + " (" + d.wavespell.glyphName + ")"
       },
       { label: "DAY", value: d.wavespell.day + " of 13" },
@@ -286,6 +304,9 @@ Panel {
     property string asset: ""
     property string variant: "dark"
     property int extent: root.markSize
+    // A glyph answers a hover with its own name (L36); the bubble lives once,
+    // at the panel root, so the glyph only reports itself.
+    property string tip: ""
     // The seal glyphs ship as two polarities; the plasma mandalas do not —
     // they carry a palette of their own — so a bare mark asks for its asset
     // untouched instead of a `-light` sibling that does not exist.
@@ -309,6 +330,14 @@ Panel {
       sourceSize.width: Math.round(width * Screen.devicePixelRatio)
       sourceSize.height: Math.round(height * Screen.devicePixelRatio)
       fillMode: Image.PreserveAspectFit
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      acceptedButtons: Qt.NoButton
+      hoverEnabled: true
+      onEntered: root.glyphTipEnter(glyphRoot)
+      onExited: root.glyphTipLeave(glyphRoot)
     }
   }
 
@@ -358,6 +387,7 @@ Panel {
           anchors.centerIn: parent
           extent: modelData.bare ? root.markSize : Math.round(root.markSize * root.glyphFill)
           asset: modelData.asset || ""
+          tip: modelData.tip || ""
           variantAware: !modelData.bare
           variant: root.glyphFor(markPlaque.color)
         }
@@ -385,6 +415,7 @@ Panel {
     property string caption: ""
     property string sealColorName: ""
     property string asset: ""
+    property string tip: ""
 
     spacing: Style.space(4)
     width: Math.max(root.crossSize, Math.ceil(captionMetrics.advanceWidth))
@@ -414,6 +445,7 @@ Panel {
           anchors.centerIn: parent
           extent: Math.round(crossPlaque.width * root.glyphFill)
           asset: crossCell.asset
+          tip: crossCell.tip
           variant: root.glyphFor(crossPlaque.color)
         }
       }
@@ -499,6 +531,7 @@ Panel {
                 anchors.centerIn: parent
                 extent: Math.round(parent.width * root.glyphFill)
                 asset: root.reading ? root.reading.asset : ""
+                tip: root.reading ? Dreamspell.sealFullName(root.reading.seal) : ""
                 variant: root.glyphFor(plaque.color)
               }
             }
@@ -668,6 +701,9 @@ Panel {
                           asset: root.reading
                             ? Dreamspell.sealAsset(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
                             : ""
+                          tip: root.reading
+                            ? Dreamspell.sealFullName(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
+                            : ""
                           variant: root.glyphFor(slotPlate.color)
                         }
                       }
@@ -790,6 +826,7 @@ Panel {
                         caption: root.reading && root.reading.isGuideSelf ? "GUIDE (SELF)" : "GUIDE"
                         sealColorName: root.reading ? root.reading.oracle.guide.color : ""
                         asset: root.reading ? root.reading.oracle.guide.asset : ""
+                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.guide.seal) : ""
                       }
                     }
 
@@ -801,6 +838,7 @@ Panel {
                         caption: "ANTIPODE"
                         sealColorName: root.reading ? root.reading.oracle.antipode.color : ""
                         asset: root.reading ? root.reading.oracle.antipode.asset : ""
+                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.antipode.seal) : ""
                       }
 
                       OracleCrossCell {
@@ -808,6 +846,7 @@ Panel {
                         caption: "TODAY"
                         sealColorName: root.reading ? root.reading.color : ""
                         asset: root.reading ? root.reading.asset : ""
+                        tip: root.reading ? Dreamspell.sealFullName(root.reading.seal) : ""
                       }
 
                       OracleCrossCell {
@@ -815,6 +854,7 @@ Panel {
                         caption: "ANALOG"
                         sealColorName: root.reading ? root.reading.oracle.analog.color : ""
                         asset: root.reading ? root.reading.oracle.analog.asset : ""
+                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.analog.seal) : ""
                       }
                     }
 
@@ -828,12 +868,67 @@ Panel {
                         caption: "OCCULT"
                         sealColorName: root.reading ? root.reading.oracle.occult.color : ""
                         asset: root.reading ? root.reading.oracle.occult.asset : ""
+                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.occult.seal) : ""
                       }
                     }
                   }
                 }
               }
             }
+          }
+        }
+      }
+
+      Timer {
+        id: glyphTipTimer
+        interval: 350
+        property Item target: null
+        onTriggered: root.glyphTipTarget = target
+      }
+
+      // One bubble for every glyph, clamped inside the panel. It sits above
+      // the glyph unless the panel's top edge is too close, in which case it
+      // flips below, so a glyph near either edge still gets a readable label.
+      Item {
+        id: glyphTipLayer
+        anchors.fill: parent
+        z: 900
+
+        Rectangle {
+          id: glyphTipBubble
+          visible: root.glyphTipTarget !== null
+          width: glyphTipLabel.implicitWidth + Style.space(20)
+          height: glyphTipLabel.implicitHeight + Style.space(10)
+          radius: Style.space(6)
+          color: Qt.darker(root.contentForeground, 3.2)
+          border.width: 1
+          border.color: Qt.darker(root.contentForeground, 2.4)
+
+          readonly property point anchorPoint: root.glyphTipTarget
+            ? root.glyphTipTarget.mapToItem(glyphTipLayer, root.glyphTipTarget.width / 2, 0)
+            : Qt.point(0, 0)
+
+          x: Math.max(Style.space(8),
+            Math.min(glyphTipLayer.width - width - Style.space(8),
+              anchorPoint.x - width / 2))
+
+          y: {
+            if (!root.glyphTipTarget) return Style.space(8)
+            var gap = Style.space(6)
+            var above = anchorPoint.y - height - gap
+            if (above >= Style.space(8)) return above
+            var below = anchorPoint.y + root.glyphTipTarget.height + gap
+            return Math.min(below, glyphTipLayer.height - height - Style.space(8))
+          }
+
+          Text {
+            id: glyphTipLabel
+            anchors.centerIn: parent
+            textFormat: Text.PlainText
+            text: root.glyphTipTarget ? root.glyphTipTarget.tip : ""
+            color: root.contentForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: root.labelSize
           }
         }
       }

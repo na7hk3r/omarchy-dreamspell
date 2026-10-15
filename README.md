@@ -93,6 +93,9 @@ slot has no width for the pair.
   antipode to the left, the occult below — each with its own glyph and colour
   plaque. All four carry the kin's own tone, as the calendar requires.
 
+Hovering any seal glyph — the hero, a row's mark, a strip slot, a cross arm —
+shows its name: the modern seal with the classic day sign beside it, `Dog (Oc)`.
+
 Colour is carried by the plaque and shape by the glyph, so a reading stays
 legible whichever way the theme is set. Each glyph ships in a dark and a light
 polarity and the panel picks the one that contrasts with its own plaque: a

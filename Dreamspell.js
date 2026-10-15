@@ -142,6 +142,13 @@ function glyphName(seal) {
   return GLYPHS[norm20(seal) - 1];
 }
 
+// The glyph's own name, as the tooltips spell it (L36) and as the WAVESPELL
+// row's value already reads: the modern seal with the classic day sign beside
+// it -- "Dog (Oc)".
+function sealFullName(seal) {
+  return sealName(seal) + " (" + glyphName(seal) + ")";
+}
+
 // The glyph artwork ships next to the panel as seals/<NN>-<day-sign>.svg, so a
 // seal number alone is enough to find it. The file names follow this slug, which
 // is why the day-sign spelling in GLYPHS is load-bearing rather than cosmetic.

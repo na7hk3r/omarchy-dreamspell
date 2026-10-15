@@ -57,6 +57,12 @@ test('cycle bounds: Kin 1 is Red Magnetic Dragon, Kin 260 is Yellow Cosmic Sun',
   assert.equal(D.colorForKin(260), 'Yellow');
 });
 
+test('sealFullName pairs the seal name with its classic day-sign name', () => {
+  assert.equal(D.sealFullName(10), 'Dog (Oc)');
+  assert.equal(D.sealFullName(20), 'Sun (Ahau)');
+  assert.equal(D.sealFullName(21), 'Dragon (Imix)');
+});
+
 test('consecutive days advance the kin by one across a year boundary', () => {
   assert.equal(D.kinForDate(1987, 12, 31), 192);
   assert.equal(D.kinForDate(1988, 1, 1), 193);
