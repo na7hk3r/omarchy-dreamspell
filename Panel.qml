@@ -54,23 +54,29 @@ Panel {
   // the bar's scale. Everything below derives from these, so moving the scale
   // moves the whole panel together.
   readonly property real typeScale: 1.2
-  readonly property int labelSize: Math.round(Style.font.bodySmall * root.typeScale)
+  // Four tiers, loudest first: the hero (heroSize), the data values
+  // (valueSize), the section titles (sectionSize) and the row labels and
+  // captions (labelSize). L35 set the gaps: labels a step under their old
+  // size, titles a step over, so each tier reads at a glance.
+  readonly property int labelSize: Math.round(Style.font.bodySmall * root.typeScale) - 1
   // Two steps under the panel scale: the value answers the label beside it, and
   // at the title token the data read as loudly as the hero.
   readonly property int valueSize: Math.round(Style.font.title * root.typeScale) - 2
-  readonly property int sectionSize: Math.round(Style.font.caption * root.typeScale)
+  readonly property int sectionSize: Math.round(Style.font.caption * root.typeScale) + 2
   readonly property int heroSize: Math.round(Style.font.displayLarge * root.typeScale)
   readonly property int heroSubtitleSize: Math.round(Style.font.subtitle * root.typeScale)
-  readonly property int noteSize: Math.round(Style.font.bodySmall * root.typeScale)
+  readonly property int noteSize: Math.round(Style.font.bodySmall * root.typeScale) - 1
 
   // How much of a plate the seal glyph fills. Past roughly 0.86 the artwork's
   // corners reach the plate's own corner radius and get cut, so this sits near
   // the ceiling: the drawing has to be readable, not merely present.
   readonly property real glyphFill: 0.84
-  // Rows are tall enough for the mark, not for the text.
+  // Rows are tall enough for the mark, not for the text. L35 tightened the
+  // leading from markSize + 6 to markSize + 3: the rows still clear the
+  // plaque, but the sections read as blocks rather than as airy lists.
   readonly property int rowHeight: Math.max(
     Math.round(root.valueSize * 1.8),
-    root.markSize + Style.space(6))
+    root.markSize + Style.space(3))
   readonly property int labelWidth: Math.round(Style.space(104) * root.typeScale)
   // A seal mark is the glyph on a plaque of the seal's own colour, sized for the
   // artwork inside it: at the old size every day sign collapsed into the same
@@ -86,8 +92,9 @@ Panel {
   // the centre, the guide above, the analog to the right, the antipode to the
   // left, the occult below — and its marks run about twice a row's, because
   // the figure is read as a shape rather than as a list. L32 grew it from
-  // 1.5x so the right column carries its share of the panel's height.
-  readonly property int crossSize: Math.round(root.markSize * 2.2)
+  // 1.5x so the right column carries its share of the panel's height; L35
+  // trimmed it back to 2.1x as the rows tightened.
+  readonly property int crossSize: Math.round(root.markSize * 2.1)
   // The cross sizes its cells by their captions, so the two longest are
   // measured rather than guessed; a caption is never elided.
   readonly property real crossSideWidth: Math.max(root.crossSize, Math.ceil(crossCaptionMetrics.advanceWidth))
@@ -99,7 +106,7 @@ Panel {
     text: "ANTIPODE"
     font.family: root.contentFontFamily
     font.pixelSize: root.labelSize
-    font.letterSpacing: 1
+    font.letterSpacing: 1.5
     font.bold: true
   }
 
@@ -108,7 +115,7 @@ Panel {
     text: "TODAY"
     font.family: root.contentFontFamily
     font.pixelSize: root.labelSize
-    font.letterSpacing: 1
+    font.letterSpacing: 1.5
     font.bold: true
   }
 
@@ -325,7 +332,7 @@ Panel {
         color: Qt.darker(root.contentForeground, 1.6)
         font.family: root.contentFontFamily
         font.pixelSize: root.labelSize
-        font.letterSpacing: 1
+        font.letterSpacing: 1.5
         font.bold: true
         elide: Text.ElideRight
       }
@@ -387,7 +394,7 @@ Panel {
       text: crossCell.caption
       font.family: root.contentFontFamily
       font.pixelSize: root.labelSize
-      font.letterSpacing: 1
+      font.letterSpacing: 1.5
       font.bold: true
     }
 
@@ -420,7 +427,7 @@ Panel {
       color: Qt.darker(root.contentForeground, 1.6)
       font.family: root.contentFontFamily
       font.pixelSize: root.labelSize
-      font.letterSpacing: 1
+      font.letterSpacing: 1.5
       font.bold: true
     }
   }
@@ -501,7 +508,6 @@ Panel {
               anchors.left: heroLabels.right
               anchors.leftMargin: Style.space(24)
               anchors.verticalCenter: parent.verticalCenter
-              width: Style.space(72)
               spacing: Style.space(1)
 
               Text {
@@ -511,7 +517,10 @@ Panel {
                 text: root.toneMark
                 color: root.contentForeground
                 font.family: root.numeralReady ? numerals.name : root.contentFontFamily
-                font.pixelSize: root.heroSize
+                // L35: a step over the hero's own size, so the numeral holds
+                // its own beside the plaque instead of floating small next to
+                // a drawing three times its height.
+                font.pixelSize: Math.round(root.heroSize * 1.4)
               }
 
               Text {
@@ -522,7 +531,7 @@ Panel {
                 color: Qt.darker(root.contentForeground, 1.6)
                 font.family: root.contentFontFamily
                 font.pixelSize: root.labelSize
-                font.letterSpacing: 1
+                font.letterSpacing: 1.5
                 font.bold: true
               }
             }
@@ -589,9 +598,14 @@ Panel {
 
                 PanelSectionHeader {
                   text: "DAY"
-                  foreground: root.contentForeground
+                  // The shell's section header dims its text 1.4x; a title has
+                  // to outrank the data under it, so L35 pins it to the panel's
+                  // full foreground and gives it enough tracking to read as a
+                  // title rather than as one more row label.
+                  color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                  font.letterSpacing: 2
                 }
 
                 Repeater {
@@ -610,43 +624,52 @@ Panel {
 
                 PanelSectionHeader {
                   text: "WAVESPELL"
-                  foreground: root.contentForeground
+                  color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                  font.letterSpacing: 2
                 }
 
                 // The wavespell drawn as its thirteen days: every slot
                 // carries that day's own seal, the day you are on is the
                 // filled one, so the position reads at a glance. The DAY row
-                // below still carries the exact count.
-                Row {
-                  id: wavespellStrip
-                  width: parent ? parent.width : implicitWidth
-                  height: Math.round(root.valueSize * 1.8)
-                  spacing: Style.space(4)
+                // below still carries the exact count. L35: the strip sits in
+                // a wrapper with air above and below, so the icons are not
+                // hemmed in by the header and the rows.
+                Item {
+                  width: parent.width
+                  height: wavespellStrip.height + Style.space(12)
 
-                  readonly property int slots: 13
-                  readonly property real slotWidth: (width - spacing * (slots - 1)) / slots
+                  Row {
+                    id: wavespellStrip
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent ? parent.width : implicitWidth
+                    height: Math.round(root.valueSize * 1.8)
+                    spacing: Style.space(4)
 
-                  Repeater {
-                    model: wavespellStrip.slots
+                    readonly property int slots: 13
+                    readonly property real slotWidth: (width - spacing * (slots - 1)) / slots
 
-                    Rectangle {
-                      id: slotPlate
-                      width: wavespellStrip.slotWidth
-                      height: wavespellStrip.height
-                      radius: Math.round(Math.min(width, height) * 0.3)
-                      color: root.reading && index + 1 === root.reading.wavespell.day
-                        ? root.contentForeground
-                        : Qt.darker(root.contentForeground, 2.6)
+                    Repeater {
+                      model: wavespellStrip.slots
 
-                      SealGlyph {
-                        anchors.centerIn: parent
-                        extent: Math.round(parent.height * 0.8)
-                        asset: root.reading
-                          ? Dreamspell.sealAsset(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
-                          : ""
-                        variant: root.glyphFor(slotPlate.color)
+                      Rectangle {
+                        id: slotPlate
+                        width: wavespellStrip.slotWidth
+                        height: wavespellStrip.height
+                        radius: Math.round(Math.min(width, height) * 0.3)
+                        color: root.reading && index + 1 === root.reading.wavespell.day
+                          ? root.contentForeground
+                          : Qt.darker(root.contentForeground, 2.6)
+
+                        SealGlyph {
+                          anchors.centerIn: parent
+                          extent: Math.round(parent.height * 0.8)
+                          asset: root.reading
+                            ? Dreamspell.sealAsset(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
+                            : ""
+                          variant: root.glyphFor(slotPlate.color)
+                        }
                       }
                     }
                   }
@@ -675,9 +698,10 @@ Panel {
 
                 PanelSectionHeader {
                   text: "13-MOON YEAR"
-                  foreground: root.contentForeground
+                  color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                  font.letterSpacing: 2
                 }
 
                 Repeater {
@@ -696,9 +720,10 @@ Panel {
 
                 PanelSectionHeader {
                   text: "CASTLE"
-                  foreground: root.contentForeground
+                  color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                  font.letterSpacing: 2
                 }
 
                 Repeater {
@@ -725,9 +750,10 @@ Panel {
 
                 PanelSectionHeader {
                   text: "ORACLE"
-                  foreground: root.contentForeground
+                  color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                  font.letterSpacing: 2
                 }
 
                 Text {
@@ -752,7 +778,7 @@ Panel {
                   Column {
                     id: crossBlock
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: Style.space(12)
+                    spacing: Style.space(10)
 
                     Item {
                       width: root.crossWidth
