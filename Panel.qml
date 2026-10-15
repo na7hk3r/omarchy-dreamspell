@@ -5,7 +5,9 @@ import qs.Ui
 import "Dreamspell.js" as Dreamspell
 
 // The Dreamspell popup: today's kin read out in full — seal, tone, colour,
-// oracle, wavespell, castle and its place in the 13-Moon year.
+// oracle, wavespell (drawn as its thirteen days), castle, the moon's name and
+// totem, the day's radial plasma, its place in the 13-Moon year and the
+// traditional Haab date alongside.
 //
 // BarWidget.qml owns the bar label and hands this panel the button to
 // anchor against.
@@ -128,8 +130,15 @@ Panel {
       { label: "ANILLO SOLAR", value: bearer.ns + " \u00b7 year " + bearer.yearInRing + " of 52" }
     ]
     // The Day Out of Time belongs to no moon, so it has no moon name to show.
+    // The moon's value is its full name — tone plus totem, "Electric Deer" —
+    // and the day's radial plasma gets the row the moon used to share with it.
     if (d.moon && d.moon.kind === "moon")
-      rows.splice(1, 0, { label: "MOON", value: d.moon.moonName + " \u00b7 " + d.moon.weekday })
+      rows.splice(1, 0,
+        { label: "MOON", value: d.moon.fullName },
+        { label: "PLASMA", value: d.moon.weekday })
+    // The Haab is the traditional solar count, read off the Long Count rather
+    // than off the kin, so it sits with the calendar rows.
+    rows.splice(rows.length - 3, 0, { label: "HAAB", value: d.haab ? d.haab.label : "" })
     return rows
   }
 
@@ -530,6 +539,32 @@ Panel {
                   foreground: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
+                }
+
+                // The wavespell drawn as its thirteen days: the day you are on
+                // is the filled slot, so the position reads at a glance. The
+                // DAY row below still carries the exact count.
+                Row {
+                  id: wavespellStrip
+                  width: parent ? parent.width : implicitWidth
+                  height: Math.round(root.valueSize * 1.6)
+                  spacing: Style.space(4)
+
+                  readonly property int slots: 13
+                  readonly property real slotWidth: (width - spacing * (slots - 1)) / slots
+
+                  Repeater {
+                    model: wavespellStrip.slots
+
+                    Rectangle {
+                      width: wavespellStrip.slotWidth
+                      height: wavespellStrip.height
+                      radius: Math.round(Math.min(width, height) * 0.3)
+                      color: root.reading && index + 1 === root.reading.wavespell.day
+                        ? root.contentForeground
+                        : Qt.darker(root.contentForeground, 2.6)
+                    }
+                  }
                 }
 
                 Repeater {

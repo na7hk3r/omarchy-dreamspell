@@ -79,11 +79,13 @@ slot has no width for the pair.
 - **Hero** — the day's seal drawn as the Mesoamerican glyph on a plaque filled
   with the seal's colour, with the tone beside it as a Maya numeral.
 - **Day** — seal, tone, colour, Maya glyph name.
-- **13-Moon year** — the date inside the 13-Moon year, moon and weekday, the
-  year bearer with its glyph and kin, the Gregorian span it covers, and the
-  solar ring written as `NS1.39`.
-- **Wavespell & castle** — the 13-day wavespell, which day of it this is, the
-  kin that opened it, and the 52-day castle.
+- **13-Moon year** — the date inside the 13-Moon year, the moon's full name
+  (its tone plus totem, e.g. *Electric Deer*), the day's radial plasma, the
+  traditional Haab date, the year bearer with its glyph and kin, the Gregorian
+  span it covers, and the solar ring written as `NS1.39`.
+- **Wavespell & castle** — the 13-day wavespell drawn as thirteen slots with
+  the day you are on filled, which day of it this is, the kin that opened it,
+  and the 52-day castle.
 - **Oracle** — guide, analog, antipode and occult, each with its own glyph and
   colour plaque. All four carry the kin's own tone, as the calendar requires.
 
@@ -124,6 +126,14 @@ The correlation is Dreamspell, not the traditional GMT Tzolkin:
   (`2024 - 1987 = 37`). Treating 1987 as year *one* instead of zero shifts every
   ring number by one, which is the mistake this model originally made.
 
+The **Haab** row is the traditional 365-day count: eighteen months (*uinals*)
+of twenty days plus the five Wayeb days. It is read off the proleptic Gregorian
+date through the Long Count with the standard correlation `584283` — the epoch
+`0.0.0.0.0` is `8 Kumkʼu`, which fixes the offset. It is a different count from
+the Dreamspell kin, so it is drawn beside the kin rather than derived from it;
+`LONG_COUNT_CORRELATION` in `Dreamspell.js` is the single dial if another
+correlation is wanted.
+
 The reference implementation at mayankin.com (`dttoday.js`) has a negative-modulo
 bug for years divisible by 52 — `2028-01-01`, for instance. This plugin uses a
 true modulo and is not a blind port.
@@ -155,7 +165,7 @@ context and inside QML, with no build step and no copy of the model.
 | `manifest.json` | Plugin manifest, schema version 1 |
 | `BarWidget.qml` | Bar label, format cycling, popup host, IPC |
 | `Panel.qml` | The reading panel |
-| `Dreamspell.js` | Calendar model — kin, oracle, wavespell, castle, 13-Moon |
+| `Dreamspell.js` | Calendar model — kin, oracle, wavespell, castle, 13-Moon, Haab |
 | `seals/` | The 20 day-sign glyphs, each in a dark and a light polarity |
 | `fonts/` | `Noto Sans Mayan Numerals`, for the tones, with its OFL licence |
 | `test/dreamspell.test.js` | Regression tests over the model (`node --test test/`) |
