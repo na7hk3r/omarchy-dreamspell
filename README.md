@@ -80,14 +80,16 @@ slot has no width for the pair.
   with the seal's colour, with the tone beside it as a Maya numeral.
 - **Day** — seal, tone, colour, Maya glyph name.
 - **13-Moon year** — the date inside the 13-Moon year, the moon's full name
-  (its tone plus totem, e.g. *Electric Deer*), the day's radial plasma, the
-  traditional Haab date, the year bearer with its glyph and kin, the Gregorian
-  span it covers, and the solar ring written as `NS1.39`.
-- **Wavespell & castle** — the 13-day wavespell drawn as thirteen slots with
-  the day you are on filled, which day of it this is, the kin that opened it,
-  and the 52-day castle.
-- **Oracle** — guide, analog, antipode and occult, each with its own glyph and
-  colour plaque. All four carry the kin's own tone, as the calendar requires.
+  (its tone plus totem, e.g. *Electric Deer*), the day's radial plasma with its
+  chakra symbol, the traditional Haab date, the year bearer with its glyph and
+  kin, the Gregorian span it covers, and the solar ring written as `NS1.39`.
+- **Wavespell & castle** — the 13-day wavespell drawn as thirteen slots, each
+  carrying that day's own seal, with the day you are on filled, which day of it
+  this is, the kin that opened it, and the 52-day castle.
+- **Oracle** — the four positions drawn as the synchronario's Mayan cross:
+  today's seal at the centre, the guide above it, the analog to the right, the
+  antipode to the left, the occult below — each with its own glyph and colour
+  plaque. All four carry the kin's own tone, as the calendar requires.
 
 Colour is carried by the plaque and shape by the glyph, so a reading stays
 legible whichever way the theme is set. Each glyph ships in a dark and a light
@@ -96,10 +98,11 @@ single tinted asset was tried first and never applied, which left the artwork in
 its file's black on every plaque, saturated ones included.
 
 The panel is a wide reading surface rather than a tall list: the hero spans the
-top, the day and its place in the year fill the left column, and the wavespell,
-castle and oracle fill the right. Its type, marks and hero plaque all derive
-from one `typeScale` in `Panel.qml` (1.2× the shell's own scale), so the panel
-can be made larger or smaller as a whole instead of one size at a time.
+top, then three columns — day and wavespell on the left, the place in the
+13-Moon year in the middle, the oracle cross on the right. Its type, marks and
+hero plaque all derive from one `typeScale` in `Panel.qml` (1.2× the shell's own
+scale), so the panel can be made larger or smaller as a whole instead of one
+size at a time.
 
 ## Calendar notes
 
@@ -167,6 +170,7 @@ context and inside QML, with no build step and no copy of the model.
 | `Panel.qml` | The reading panel |
 | `Dreamspell.js` | Calendar model — kin, oracle, wavespell, castle, 13-Moon, Haab |
 | `seals/` | The 20 day-sign glyphs, each in a dark and a light polarity |
+| `plasma/` | The seven radial-plasma symbols, one chakra mandala per plasma |
 | `fonts/` | `Noto Sans Mayan Numerals`, for the tones, with its OFL licence |
 | `test/dreamspell.test.js` | Regression tests over the model (`node --test test/`) |
 | `CREDITS.md` | Provenance and licence of every bundled asset |
@@ -175,7 +179,8 @@ context and inside QML, with no build step and no copy of the model.
 
 The code is MIT — see [LICENSE](LICENSE).
 
-The bundled artwork is not: the seal glyphs under `seals/` are CC BY-SA 4.0 and
-the numeral font under `fonts/` is OFL-1.1. Both carry their own terms, so
-redistributing this plugin means honouring all three. Every file, its author and
-its licence is listed in [CREDITS.md](CREDITS.md).
+The bundled artwork is not: the seal glyphs under `seals/` and the plasma
+mandalas under `plasma/` are CC BY-SA 4.0, and the numeral font under `fonts/`
+is OFL-1.1. Each carries its own terms, so redistributing this plugin means
+honouring all of them. Every file, its author and its licence is listed in
+[CREDITS.md](CREDITS.md).
