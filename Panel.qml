@@ -84,9 +84,10 @@ Panel {
 
   // The oracle is drawn as the synchronario's Mayan cross — today's seal at
   // the centre, the guide above, the analog to the right, the antipode to the
-  // left, the occult below — and its marks run a step larger than a row's,
-  // because the figure is read as a shape rather than as a list.
-  readonly property int crossSize: Math.round(root.markSize * 1.5)
+  // left, the occult below — and its marks run about twice a row's, because
+  // the figure is read as a shape rather than as a list. L32 grew it from
+  // 1.5x so the right column carries its share of the panel's height.
+  readonly property int crossSize: Math.round(root.markSize * 2.2)
   // The cross sizes its cells by their captions, so the two longest are
   // measured rather than guessed; a caption is never elided.
   readonly property real crossSideWidth: Math.max(root.crossSize, Math.ceil(crossCaptionMetrics.advanceWidth))
@@ -196,7 +197,17 @@ Panel {
         value: d.wavespell.sealName + " (" + d.wavespell.glyphName + ")"
       },
       { label: "DAY", value: d.wavespell.day + " of 13" },
-      { label: "OPENED", value: "Kin " + d.wavespell.kin },
+      { label: "OPENED", value: "Kin " + d.wavespell.kin }
+    ]
+  }
+
+  // The castle is its own section in the middle column since L32: it is the
+  // 52-day cycle rather than a wavespell fact, and it is what balances the
+  // middle column against the left one.
+  readonly property var castleRows: {
+    var d = root.reading
+    if (!d) return []
+    return [
       { label: "CASTLE", value: d.castle + " \u00b7 " + d.castleName }
     ]
   }
@@ -368,7 +379,7 @@ Panel {
     property string sealColorName: ""
     property string asset: ""
 
-    spacing: Style.space(2)
+    spacing: Style.space(4)
     width: Math.max(root.crossSize, Math.ceil(captionMetrics.advanceWidth))
 
     TextMetrics {
@@ -599,7 +610,7 @@ Panel {
                 }
 
                 PanelSectionHeader {
-                  text: "WAVESPELL & CASTLE"
+                  text: "WAVESPELL"
                   foreground: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
@@ -649,7 +660,8 @@ Panel {
               }
             }
 
-            // ---- Middle: the 13-Moon year the kin sits in.
+            // ---- Middle: the 13-Moon year the kin sits in, then the castle
+            //      its wavespell turns in.
             Column {
               width: parent.columnWidth
               spacing: root.sectionGap
@@ -671,6 +683,27 @@ Panel {
 
                 Repeater {
                   model: root.yearRows
+                  delegate: detailRow
+                }
+              }
+
+              Column {
+                width: parent.width
+                spacing: Style.space(2)
+
+                PanelSeparator {
+                  foreground: root.contentForeground
+                }
+
+                PanelSectionHeader {
+                  text: "CASTLE"
+                  foreground: root.contentForeground
+                  fontFamily: root.contentFontFamily
+                  fontSize: root.sectionSize
+                }
+
+                Repeater {
+                  model: root.castleRows
                   delegate: detailRow
                 }
               }
@@ -720,7 +753,7 @@ Panel {
                   Column {
                     id: crossBlock
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: Style.space(8)
+                    spacing: Style.space(12)
 
                     Item {
                       width: root.crossWidth

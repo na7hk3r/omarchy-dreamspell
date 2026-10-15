@@ -83,9 +83,11 @@ slot has no width for the pair.
   (its tone plus totem, e.g. *Electric Deer*), the day's radial plasma with its
   chakra symbol, the traditional Haab date, the year bearer with its glyph and
   kin, the Gregorian span it covers, and the solar ring written as `NS1.39`.
-- **Wavespell & castle** — the 13-day wavespell drawn as thirteen slots, each
-  carrying that day's own seal, with the day you are on filled, which day of it
-  this is, the kin that opened it, and the 52-day castle.
+- **Wavespell** — the 13-day wavespell drawn as thirteen slots, each carrying
+  that day's own seal, with the day you are on filled, which day of it this is,
+  and the kin that opened it.
+- **Castle** — the 52-day castle the wavespell turns in, in the middle column
+  beside the 13-Moon year.
 - **Oracle** — the four positions drawn as the synchronario's Mayan cross:
   today's seal at the centre, the guide above it, the analog to the right, the
   antipode to the left, the occult below — each with its own glyph and colour
@@ -98,8 +100,8 @@ single tinted asset was tried first and never applied, which left the artwork in
 its file's black on every plaque, saturated ones included.
 
 The panel is a wide reading surface rather than a tall list: the hero spans the
-top, then three columns — day and wavespell on the left, the place in the
-13-Moon year in the middle, the oracle cross on the right. Its type, marks and
+top, then three columns — day and wavespell on the left, the 13-Moon year and
+the castle in the middle, the oracle cross on the right. Its type, marks and
 hero plaque all derive from one `typeScale` in `Panel.qml` (1.2× the shell's own
 scale), so the panel can be made larger or smaller as a whole instead of one
 size at a time.
