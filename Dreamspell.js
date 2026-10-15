@@ -8,6 +8,9 @@
 //   1987-07-26 -> Kin 34, White Galactic Wizard   (Dreamspell anchor, Julian-free count)
 //   2026-10-15 -> Kin 50, White Spectral Dog      (cross-checked against a live calculator)
 // February 29 folds onto February 28 ("0.0 Hunab Ku") and never advances the kin.
+//
+// The Haab (see its own section) is the traditional 365-day count, read off the
+// Long Count with the standard correlation 584283 rather than off the kin.
 
 var SEALS = [
   "Dragon", "Wind", "Night", "Seed", "Serpent",
@@ -223,6 +226,24 @@ function moonName(moon) {
   return TONES[index];
 }
 
+// Each of the thirteen moons is named by its tone AND its animal totem, which
+// is how a synchronary writes them: the third moon is the Electric Deer, and
+// the thirteenth -- the one that closes the year -- is the Cosmic Turtle.
+var MOON_TOTEMS = [
+  "Bat", "Scorpion", "Deer", "Owl", "Peacock",
+  "Lizard", "Monkey", "Hawk", "Jaguar", "Dog",
+  "Serpent", "Rabbit", "Turtle"
+];
+
+function moonTotem(moon) {
+  var index = ((moon - 1) % 13 + 13) % 13;
+  return MOON_TOTEMS[index];
+}
+
+function moonFullName(moon) {
+  return moonName(moon) + " " + moonTotem(moon);
+}
+
 function castleName(castle) {
   var index = Math.min(Math.max(castle, 1), 5) - 1;
   return CASTLES[index];
@@ -278,7 +299,10 @@ function moonDateFor(year, month, day) {
   var offset = Math.round((target - start) / MS_PER_DAY);
 
   if (offset >= 364) {
-    return { kind: "out-of-time", moon: 0, moonName: "", day: 0, weekday: "", offset: offset };
+    return {
+      kind: "out-of-time", moon: 0, moonName: "", totem: "", fullName: "",
+      day: 0, weekday: "", offset: offset
+    };
   }
 
   var moon = Math.floor(offset / 28) + 1;
@@ -287,6 +311,8 @@ function moonDateFor(year, month, day) {
     kind: "moon",
     moon: moon,
     moonName: moonName(moon),
+    totem: moonTotem(moon),
+    fullName: moonFullName(moon),
     day: dayOfMoon,
     weekday: WEEKDAYS[(dayOfMoon - 1) % 7],
     offset: offset
@@ -327,6 +353,74 @@ function yearBearerFor(year, month, day) {
     ring: ring,
     yearInRing: yearInRing,
     ns: "NS" + ring + "." + yearInRing
+  };
+}
+
+// ------------------------------------------------- the Haab (365-day count)
+
+// The Haab is the traditional Maya solar year: eighteen months ("uinals") of
+// twenty days each, plus Wayeb, five days that belong to no month. It is read
+// off the Long Count, NOT off the Dreamspell kin -- the two are different
+// traditions and the panel shows them side by side rather than mixing them.
+// The standard (GMT) correlation below turns a proleptic Gregorian date into a
+// Long Count day number; the whole Haab moves with this one constant, so
+// following another reference means changing exactly one line.
+var LONG_COUNT_CORRELATION = 584283;
+
+// Conventional modern spellings; the glottal stop is U+02BC, the same
+// character the tone words use.
+var HAAB_MONTHS = [
+  "Pop", "Woʼ", "Sip", "Sotzʼ", "Sek", "Xul",
+  "Yaxkʼin", "Mol", "Chʼen", "Yax", "Sakʼ", "Keh",
+  "Mak", "Kʼankʼin", "Muwan", "Pax", "Kʼayab", "Kumkʼu"
+];
+
+var HAAB_YEAR_DAYS = 365;
+var HAAB_WAYEB = 19; // Wayeb counts as the nineteenth month here
+
+// Julian Day Number of a proleptic Gregorian date, with astronomical year
+// numbering (3114 BCE is the year -3113). Integer arithmetic only, which is
+// why it can trust dates a JS Date cannot represent.
+function julianDayNumber(year, month, day) {
+  var a = Math.floor((14 - month) / 12);
+  var y = year + 4800 - a;
+  var m = month + 12 * a - 3;
+  return day + Math.floor((153 * m + 2) / 5) + 365 * y
+    + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+}
+
+function longCountDays(year, month, day) {
+  return julianDayNumber(year, month, day) - LONG_COUNT_CORRELATION;
+}
+
+// The Haab date of a Gregorian day, or null when the input is not a date.
+// A month's day 0 is its seating day and is written like the rest ("0 Pop");
+// Wayeb runs "0 Wayeb" to "4 Wayeb". Unlike the kin this is a plain proleptic
+// calculation, so it does not carry the modern-year guard.
+function haabForDate(year, month, day) {
+  if (!isWhole(year) || !isWhole(month) || !isWhole(day)) return null;
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > daysInMonth(year, month)) return null;
+
+  // The epoch 0.0.0.0.0 fell on 8 Kumkʼu: the eighteenth month, day 8, which
+  // sits 348 days into the Haab year.
+  var position = (((longCountDays(year, month, day) + 348) % HAAB_YEAR_DAYS)
+    + HAAB_YEAR_DAYS) % HAAB_YEAR_DAYS;
+  if (position >= 360) {
+    return {
+      month: HAAB_WAYEB,
+      monthName: "Wayeb",
+      day: position - 360,
+      label: (position - 360) + " Wayeb"
+    };
+  }
+  var index = Math.floor(position / 20);
+  var dayOfMonth = position - index * 20;
+  return {
+    month: index + 1,
+    monthName: HAAB_MONTHS[index],
+    day: dayOfMonth,
+    label: dayOfMonth + " " + HAAB_MONTHS[index]
   };
 }
 
@@ -407,6 +501,7 @@ function describeDate(year, month, day) {
     castleName: castleName(castleForKin(kin)),
     moon: moon,
     moonLabel: moonLabel(moon),
+    haab: haabForDate(year, month, day),
     yearBearer: yearBearer,
     oracle: {
       guide: oracleEntry(oracle.guide),

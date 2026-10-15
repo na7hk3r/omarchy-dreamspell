@@ -447,3 +447,96 @@ test('both polarities exist on disk for every seal, and the light one is light',
       `dark glyph for seal ${seal} should stay the pristine Commons file`);
   }
 });
+
+// -------------------------------------------------- S18 the moon's full name
+
+test('13 Moon: the moons carry their animal totems, Bat first and Turtle last', () => {
+  assert.equal(D.MOON_TOTEMS.length, 13);
+  assert.equal(D.moonTotem(1), 'Bat');
+  assert.equal(D.moonTotem(3), 'Deer');
+  assert.equal(D.moonTotem(13), 'Turtle');
+  // Normalises like the moon name does, so a wrapped moon still answers.
+  assert.equal(D.moonTotem(14), 'Bat');
+  assert.equal(D.moonTotem(0), 'Turtle');
+});
+
+test('13 Moon: the full name is the tone plus the totem', () => {
+  assert.equal(D.moonFullName(1), 'Magnetic Bat');
+  assert.equal(D.moonFullName(3), 'Electric Deer');
+  assert.equal(D.moonFullName(13), 'Cosmic Turtle');
+});
+
+test('13 Moon: the reading carries the moon name, its totem and the day plasma', () => {
+  const md = D.moonDateFor(2026, 10, 15);
+  assert.equal(md.moon, 3);
+  assert.equal(md.day, 26);
+  assert.equal(md.moonName, 'Electric');
+  assert.equal(md.totem, 'Deer');
+  assert.equal(md.fullName, 'Electric Deer');
+  assert.equal(md.weekday, 'Alpha');
+  // The Day Out of Time belongs to no moon and must not invent a totem.
+  const out = D.moonDateFor(2026, 7, 25);
+  assert.equal(out.kind, 'out-of-time');
+  assert.equal(out.fullName, '');
+});
+
+// ------------------------------------ S19 the Haab, the traditional count
+
+test('Haab: 13.0.0.0.0, 21 December 2012, is 3 Kankin', () => {
+  const G = '\u02bc';
+  const haab = D.haabForDate(2012, 12, 21);
+  assert.equal(haab.day, 3);
+  assert.equal(haab.monthName, 'K' + G + 'ank' + G + 'in');
+  assert.equal(haab.label, '3 K' + G + 'ank' + G + 'in');
+});
+
+test('Haab: the Long Count epoch is 8 Kumku', () => {
+  const G = '\u02bc';
+  // Astronomical year -3113 is 3114 BCE, which is what the proleptic
+  // Gregorian formula needs for the epoch's Julian Day Number, 584283.
+  const haab = D.haabForDate(-3113, 8, 11);
+  assert.equal(haab.day, 8);
+  assert.equal(haab.monthName, 'Kumk' + G + 'u');
+  assert.equal(haab.label, '8 Kumk' + G + 'u');
+});
+
+test('Haab: today is 19 Yax under the standard correlation', () => {
+  assert.equal(D.haabForDate(2026, 10, 15).label, '19 Yax');
+  // The seating day of the next month follows the 19th.
+  assert.equal(D.haabForDate(2026, 10, 16).label, '0 Sak\u02bc');
+});
+
+test('Haab: Wayeb is the five-day month that closes the year', () => {
+  assert.equal(D.haabForDate(2013, 3, 28).label, '0 Wayeb');
+  assert.equal(D.haabForDate(2013, 3, 29).label, '1 Wayeb');
+  assert.equal(D.haabForDate(2013, 4, 1).label, '4 Wayeb');
+  assert.equal(D.haabForDate(2013, 4, 2).label, '0 Pop');
+  assert.equal(D.haabForDate(2013, 4, 3).label, '1 Pop');
+});
+
+test('Haab: invalid input is rejected instead of silently answered', () => {
+  assert.equal(D.haabForDate(2026, 13, 1), null);
+  assert.equal(D.haabForDate(2026, 0, 1), null);
+  assert.equal(D.haabForDate(2026, 4, 31), null);
+});
+
+test('Haab: one full year passes through all eighteen months and five Wayeb days', () => {
+  const months = new Set();
+  let wayebDays = 0;
+  for (let i = 0; i < 365; i++) {
+    const dt = new Date(Date.UTC(2013, 3, 2) + i * 86400000);
+    const haab = D.haabForDate(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+    months.add(haab.month);
+    if (haab.month === 19) wayebDays++;
+    assert.ok(haab.day >= 0 && haab.day <= (haab.month === 19 ? 4 : 19));
+  }
+  assert.equal(months.size, 19);
+  assert.equal(wayebDays, 5);
+});
+
+test('the reading carries the Haab date and the moon full name', () => {
+  const d = D.describeDate(2026, 10, 15);
+  assert.equal(d.haab.label, '19 Yax');
+  assert.equal(d.moon.fullName, 'Electric Deer');
+  assert.equal(d.moonLabel, 'Moon 3 \u00b7 Day 26');
+});
