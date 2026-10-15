@@ -1,10 +1,10 @@
 # Credits and third-party assets
 
 This plugin redistributes artwork and a font that are **not** covered by its MIT
-license. Both keep their own terms, reproduced here.
+license. Each keeps its own terms, reproduced here.
 
 The calendar code (`Dreamspell.js`, the QML, the tests) is MIT — see [LICENSE](LICENSE).
-The two asset groups below are separate works, bundled alongside it.
+The three asset groups below are separate works, bundled alongside it.
 
 ---
 
@@ -68,6 +68,34 @@ edit made; no path data was touched.
 | 18 | Mirror | Etznab | `MAYA-g-log-cal-D18-Etznab.svg` | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | 19 | Storm | Cauac | `MAYA-g-log-cal-D19-Kawak.svg` | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | 20 | Sun | Ahau | `MAYA-g-log-cal-D20-Ajaw.svg` | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+
+---
+
+## Radial plasma symbols — `plasma/`
+
+The seven radial plasmas of the 13-Moon calendar are drawn with the chakra each
+one is paired with, the pairing the calendar itself publishes:
+
+| Plasma | Chakra | Commons file | License |
+|--------|--------|--------------|---------|
+| Dali | Sahasrara (crown) | [`Sahasrara Mandala.svg`](https://commons.wikimedia.org/wiki/File:Sahasrara_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Seli | Muladhara (root) | [`Muladhara Mandala.svg`](https://commons.wikimedia.org/wiki/File:Muladhara_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Gamma | Ajna (third eye) | [`Ajna Mandala.svg`](https://commons.wikimedia.org/wiki/File:Ajna_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Kali | Swadhisthana (sacral) | [`Swadhisthana Mandala.svg`](https://commons.wikimedia.org/wiki/File:Swadhisthana_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Alpha | Vishuddha (throat) | [`Vishuddha Mandala.svg`](https://commons.wikimedia.org/wiki/File:Vishuddha_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Limi | Manipura (solar plexus) | [`Manipura Mandala.svg`](https://commons.wikimedia.org/wiki/File:Manipura_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| Sillio | Anahata (heart) | [`Anahata Mandala.svg`](https://commons.wikimedia.org/wiki/File:Anahata_Mandala.svg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+
+| | |
+|---|---|
+| **Author** | [Morgan Phoenix](https://commons.wikimedia.org/wiki/User:Morgan_Phoenix) |
+| **License** | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| **Source** | Wikimedia Commons, "own work" uploads published 2013-01-30 |
+
+Every file is redistributed **unmodified** and renamed to the lowercased plasma
+name (`plasma/dali.svg` …), so a plasma name alone resolves to its artwork —
+`plasmaAsset()` in `Panel.qml`. The mandalas carry a palette of their own, so
+the panel draws them bare: no plaque and no tone numeral behind them.
 
 ---
 
