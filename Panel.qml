@@ -541,6 +541,9 @@ Panel {
               anchors.left: heroLabels.right
               anchors.leftMargin: Style.space(24)
               anchors.verticalCenter: parent.verticalCenter
+              // L37: this explicit width is load-bearing: both children bind
+              // their width to it, and without it the mark collapses to zero.
+              width: Style.space(72)
               spacing: Style.space(1)
 
               Text {
