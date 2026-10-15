@@ -7,20 +7,36 @@ of the day in the 13-Moon year.
 Built for Omarchy Quattro (`omarchy` 4.x). Pure calendar maths in `Dreamspell.js`,
 so the whole model is testable without a running shell.
 
-## Quick path
+## Install
 
 ```bash
-# 1. Enable it (defaults to the right section).
-omarchy plugin enable nathker.dreamspell
+omarchy plugin add https://github.com/na7hk3r/omarchy-dreamspell --enable
+```
 
-# 2. Reload the shell so the new widget is picked up.
+`add` clones the plugin into your config directory and `--enable` puts the
+widget in the bar. If it does not appear, rescan and read the log:
+
+```bash
+# Reload the shell so the new widget is picked up.
 omarchy-shell shell rescanPlugins
-
-# 3. Check for load errors.
+# Check for load errors.
 qs log -p "$OMARCHY_PATH/shell" --tail 50
 ```
 
 The bar should now show the tone and seal of the day, e.g. `11 Dog`.
+
+## Uninstall
+
+```bash
+# Out of the bar, files kept.
+omarchy plugin disable nathker.dreamspell
+
+# Gone, checkout and all.
+omarchy plugin remove nathker.dreamspell
+```
+
+Your label format is a plugin setting in `shell.json`, written by the right
+click.
 
 ## Using it
 
