@@ -4,6 +4,8 @@ Today's Dreamspell kin in the bar, the full reading on click. Jose Arguelles'
 13-Moon calendar: seal, tone, colour, oracle, wavespell, castle and the place
 of the day in the 13-Moon year.
 
+Available on the [Omarchy Plugin Marketplace](https://plugins.omarchy.org/plugin.html?id=nathker.dreamspell).
+
 <img src="./preview.png"></img>
 
 Built for Omarchy Quattro (`omarchy` 4.x). Pure calendar maths in `Dreamspell.js`,
