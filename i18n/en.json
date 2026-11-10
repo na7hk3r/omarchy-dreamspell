@@ -28,6 +28,10 @@
   "cross.analog": "ANALOG",
   "cross.occult": "OCCULT",
 
+  "view.today": "Day",
+  "view.cycles": "Cycles",
+  "view.hint": "←/→",
+
   "hero.kin": "Kin %1",
   "hero.tone": "TONE %1",
   "hero.fullName": "%1 %2 %3",

@@ -48,7 +48,8 @@ click.
 |--------|--------|
 | Left click | Opens the reading panel |
 | Right click | Cycles the bar label format |
-| Hover | Tooltip with the full traditional name and kin number |
+| Left / right arrow | Switches the panel between its two views (also the chips) |
+| Hover | Tooltip with the kin, the full traditional name and the seal's keywords |
 
 Label formats, in cycle order:
 
@@ -81,7 +82,10 @@ slot has no width for the pair.
 ## The panel
 
 - **Hero** — the day's seal drawn as the Mesoamerican glyph on a plaque filled
-  with the seal's colour, with the tone beside it as a Maya numeral.
+  with the seal's colour, with the tone beside it as a Maya numeral. Beside
+  them, the kin number, the full name (*White Spectral Dog*) and the energy
+  line: the seal's essence, the tone's essence and the stage the colour is at,
+  so the reading says what the day is *for* and not only what it is called.
 - **Day** — seal, tone, colour, Maya glyph name.
 - **13-Moon year** — the date inside the 13-Moon year, the moon's full name
   (its tone plus totem, e.g. *Electric Deer*), the day's radial plasma with its
@@ -90,15 +94,18 @@ slot has no width for the pair.
 - **Wavespell** — the 13-day wavespell drawn as thirteen slots, each carrying
   that day's own seal, with the day you are on filled, which day of it this is,
   and the kin that opened it.
-- **Castle** — the 52-day castle the wavespell turns in, in the middle column
-  beside the 13-Moon year.
+- **Castle** — the 52-day castle the wavespell turns in.
 - **Oracle** — the four positions drawn as the synchronario's Mayan cross:
   today's seal at the centre, the guide above it, the analog to the right, the
   antipode to the left, the occult below — each with its own glyph and colour
   plaque. All four carry the kin's own tone, as the calendar requires.
 
-Hovering any seal glyph — the hero, a row's mark, a strip slot, a cross arm —
-shows its name: the modern seal with the classic day sign beside it, `Dog (Oc)`.
+Hovering any glyph — the hero, a row's mark, a strip slot, a cross arm, the
+tone numeral — says what it is and what it is for: the modern seal with the
+classic day sign beside it, then its action, power and essence, e.g.
+`Dog (Oc) — Action: Love · Power: Heart · Essence: Loyalty`. The tone numeral
+answers the same way with the thirteen tones' own three keywords. The bubble
+wraps inside the panel instead of running off the edge.
 
 Colour is carried by the plaque and shape by the glyph, so a reading stays
 legible whichever way the theme is set. Each glyph ships in a dark and a light
@@ -106,12 +113,57 @@ polarity and the panel picks the one that contrasts with its own plaque: a
 single tinted asset was tried first and never applied, which left the artwork in
 its file's black on every plaque, saturated ones included.
 
-The panel is a wide reading surface rather than a tall list: the hero spans the
-top, then three columns — day and wavespell on the left, the 13-Moon year and
-the castle in the middle, the oracle cross on the right. Its type, marks and
-hero plaque all derive from one `typeScale` in `Panel.qml` (1.2× the shell's own
-scale), so the panel can be made larger or smaller as a whole instead of one
-size at a time.
+The panel is anchored to the bar, at the width the native panels use rather than
+a full-screen sheet: 480px wide and about 650 tall, so the whole reading sits on
+screen at once and nothing needs scrolling. The hero spans the top — the seal on
+its colour plaque, the tone numeral, the kin, the full name and the energy line —
+and the sections under it are split across two views switched with the chips or
+with the left and right arrows:
+
+| View | Sections |
+|------|----------|
+| **Day** | the day's seal, tone, colour and glyph, then the oracle drawn as the Mayan cross |
+| **Cycles** | the thirteen-day wavespell drawn slot by slot, the 13-Moon year, and the castle it turns in |
+
+The hero stays on both views, so the day you opened the panel for never leaves
+the screen while you read the cycles around it. A view was chosen over one long
+scrolling column because a panel that scrolls has no way to say there is more
+below it; the second view announces itself and the arrows are printed beside the
+chips. Its type sits on the shell's own scale —
+`Style.font.caption` / `body` / `displayLarge` — and its marks and hero plaque on
+`Style.space`, exactly like the first-party panels, so it follows the theme's
+spacing and font scale without a second, hand-tuned multiplier.
+
+## Languages
+
+The panel and the bar label follow the language picked under **Setup >
+Language**, live, without a restart. Catalogues ship in `i18n/` as flat JSON,
+one file per language code, wired through the shell's own
+`Commons.Translations`:
+
+```qml
+Commons.Translations {
+  id: strings
+  directory: Qt.resolvedUrl("i18n")
+}
+```
+
+A missing string falls back to its base language, then to `en.json`, then to
+the key. English is the base and the fallback; Spanish ships complete.
+
+The translation covers the glyphs, tones, colours, castles and totems, not just
+the chrome: `Dog` is `Perro`, `Spectral` is `Espectral`, `White` is `Blanco`.
+That is not a find-and-replace, because Spanish puts the adjective after the
+noun and inflects it — *White Spectral Dog* is **Perro Espectral Blanco**, and
+the year bearer changes gender with its seal: *Luna Galáctica Roja*, *Halcón
+Galáctico*. So the word order is a catalogue template (`%1 %2 %3` against
+`%3 %2 %1`), and each seal and totem declares its grammatical gender beside its
+name. The model stays language-free: it computes in numbers and stable indices
+and only then hands the display words through the lookup, so a language change
+can never move a kin, a tone or a colour.
+
+Adding a language is one file: copy `i18n/en.json`, translate the values, keep
+the keys and the `%1`-style placeholders.
 
 ## Calendar notes
 
@@ -177,7 +229,8 @@ context and inside QML, with no build step and no copy of the model.
 | `manifest.json` | Plugin manifest, schema version 1 |
 | `BarWidget.qml` | Bar label, format cycling, popup host, IPC |
 | `Panel.qml` | The reading panel |
-| `Dreamspell.js` | Calendar model — kin, oracle, wavespell, castle, 13-Moon, Haab |
+| `Dreamspell.js` | Calendar model — kin, oracle, wavespell, castle, 13-Moon, Haab — and the keyword tables behind the hovers |
+| `i18n/` | String catalogues, one flat JSON per language (`en.json` is the base) |
 | `seals/` | The 20 day-sign glyphs, each in a dark and a light polarity |
 | `plasma/` | The seven radial-plasma symbols, one chakra mandala per plasma |
 | `fonts/` | `Noto Sans Mayan Numerals`, for the tones, with its OFL licence |

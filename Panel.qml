@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Dreamspell.js" as Dreamspell
 
@@ -28,11 +29,35 @@ Panel {
   property var hostWidget: null
   readonly property var barIdentity: hostWidget || root
 
+  // The words come from the plugin's own catalogs, following the language
+  // picked under Setup > Language the same way the shell does. The model does
+  // the maths and hands back names through this lookup, so switching language
+  // re-renders the panel without a restart.
+  Commons.Translations {
+    id: strings
+    directory: Qt.resolvedUrl("i18n")
+  }
+
+  // ---- Views. The reading is two screens rather than one scrolling column:
+  //      the day with its oracle, then the cycles it turns in. The hero stays
+  //      on both, so the identity of the day never leaves the panel and only
+  //      the sections below it change. Arrows switch, and so do the chips.
+  property int viewIndex: 0
+  readonly property var viewOptions: [
+    { value: "day", label: strings.t("view.today") },
+    { value: "cycles", label: strings.t("view.cycles") }
+  ]
+
+  function setView(index) {
+    root.viewIndex = Math.max(0, Math.min(root.viewOptions.length - 1, index))
+    scroll.contentY = 0
+  }
+
   // ---- Today. SystemClock keeps this honest across midnight so the reading
   //      rolls over without the panel being reopened.
   property date today: new Date()
   readonly property var reading: Dreamspell.describeDate(
-    today.getFullYear(), today.getMonth() + 1, today.getDate())
+    today.getFullYear(), today.getMonth() + 1, today.getDate(), strings.t)
 
   // Guarded so the panel renders before the bar is injected (the bar-widget
   // contract instantiates it bare).
@@ -41,59 +66,47 @@ Panel {
 
   // The four Dreamspell colours are the calendar's own symbols, so they are
   // stated as colours rather than borrowed from the theme: a themed "red"
-  // that renders pink would be a lie about the day.
+  // that renders pink would be a lie about the day. Keyed by the model's stable
+  // colour index rather than by name, because the name is translated.
   readonly property var sealColors: ({
-    Red: "#c0504d",
-    White: "#d7dbdd",
-    Blue: "#4a7fb5",
-    Yellow: "#c9a227"
+    1: "#c0504d",
+    2: "#d7dbdd",
+    3: "#4a7fb5",
+    4: "#c9a227"
   })
 
-  // The bar is tuned for 26px of height; this panel is a wide reading surface,
-  // so its type runs a step larger than the shell default instead of reusing
-  // the bar's scale. Everything below derives from these, so moving the scale
-  // moves the whole panel together.
-  readonly property real typeScale: 1.2
-  // Four tiers, loudest first: the hero (heroSize), the data values
-  // (valueSize), the section titles (sectionSize) and the row labels and
-  // captions (labelSize). L35 set the gaps: labels a step under their old
-  // size, titles a step over, so each tier reads at a glance.
-  readonly property int labelSize: Math.round(Style.font.bodySmall * root.typeScale) - 1
-  // Two steps under the panel scale: the value answers the label beside it, and
-  // at the title token the data read as loudly as the hero.
-  readonly property int valueSize: Math.round(Style.font.title * root.typeScale) - 2
-  readonly property int sectionSize: Math.round(Style.font.caption * root.typeScale) + 2
-  readonly property int heroSize: Math.round(Style.font.displayLarge * root.typeScale)
-  readonly property int heroSubtitleSize: Math.round(Style.font.subtitle * root.typeScale)
-  readonly property int noteSize: Math.round(Style.font.bodySmall * root.typeScale) - 1
+  // Type sits on the shell's own scale, exactly as the native panels do: no
+  // second multiplier on top of tokens the theme already scales. Loudest first:
+  // the hero (heroSize), the data values (valueSize), the section titles
+  // (sectionSize) and the row labels and captions (labelSize).
+  readonly property int labelSize: Style.font.caption
+  readonly property int valueSize: Style.font.body
+  readonly property int sectionSize: Style.font.bodySmall
+  readonly property int heroSize: Style.font.displayLarge
+  readonly property int heroSubtitleSize: Style.font.subtitle
+  readonly property int noteSize: Style.font.caption
 
   // How much of a plate the seal glyph fills. Past roughly 0.86 the artwork's
   // corners reach the plate's own corner radius and get cut, so this sits near
   // the ceiling: the drawing has to be readable, not merely present.
   readonly property real glyphFill: 0.84
-  // Rows are tall enough for the mark, not for the text. L35 tightened the
-  // leading from markSize + 6 to markSize + 3: the rows still clear the
-  // plaque, but the sections read as blocks rather than as airy lists.
+  // Rows are tall enough for the mark, not for the text: the leading keeps the
+  // rows as blocks rather than as airy lists.
   readonly property int rowHeight: Math.max(
     Math.round(root.valueSize * 1.8),
     root.markSize + Style.space(3))
-  readonly property int labelWidth: Math.round(Style.space(104) * root.typeScale)
+  readonly property int labelWidth: Style.space(100)
   // A seal mark is the glyph on a plaque of the seal's own colour, sized for the
-  // artwork inside it: at the old size every day sign collapsed into the same
+  // artwork inside it: at a smaller size every day sign collapses into the same
   // grey blob.
-  readonly property int markSize: Math.round(Style.space(26) * root.typeScale)
-  readonly property int plaqueSize: Math.round(Style.space(96) * root.typeScale)
-  // The reading sits in three columns of sections, so the panel reads wide
-  // rather than as one long strip.
-  readonly property int columnGap: Style.space(28)
+  readonly property int markSize: Style.space(26)
+  readonly property int plaqueSize: Style.space(96)
   readonly property int sectionGap: Style.space(14)
 
   // The oracle is drawn as the synchronario's Mayan cross — today's seal at
   // the centre, the guide above, the analog to the right, the antipode to the
-  // left, the occult below — and its marks run about twice a row's, because
-  // the figure is read as a shape rather than as a list. L32 grew it from
-  // 1.5x so the right column carries its share of the panel's height; L35
-  // trimmed it back to 2.1x as the rows tightened.
+  // left, the occult below. Its marks run about twice a row's, because the
+  // figure is read as a shape rather than as a list.
   readonly property int crossSize: Math.round(root.markSize * 2.1)
   // The cross sizes its cells by their captions, so the two longest are
   // measured rather than guessed; a caption is never elided.
@@ -103,7 +116,7 @@ Panel {
 
   TextMetrics {
     id: crossCaptionMetrics
-    text: "ANTIPODE"
+    text: strings.t("cross.antipode")
     font.family: root.contentFontFamily
     font.pixelSize: root.labelSize
     font.letterSpacing: 1.5
@@ -112,7 +125,7 @@ Panel {
 
   TextMetrics {
     id: crossTodayMetrics
-    text: "TODAY"
+    text: strings.t("cross.today")
     font.family: root.contentFontFamily
     font.pixelSize: root.labelSize
     font.letterSpacing: 1.5
@@ -127,8 +140,8 @@ Panel {
     ? ""
     : (root.numeralReady ? root.reading.toneNumeral : String(root.reading.tone))
 
-  function sealColor(name) {
-    var value = root.sealColors[name]
+  function sealColor(index) {
+    var value = root.sealColors[index]
     return value === undefined ? root.contentForeground : value
   }
 
@@ -148,7 +161,10 @@ Panel {
   // ---- Hover tooltips (L36): every seal glyph reports itself here and one
   //      bubble at the panel root shows its name. The short delay keeps the
   //      bubble from flickering while the pointer crosses the strip.
-  property Item glyphTipTarget: null
+  // Typed `var` rather than `Item`: every glyph carries its own `tip` string,
+  // and the bubble reads it back off this property. A plain `Item` type would
+  // make that read a phantom "no such property" at lint time.
+  property var glyphTipTarget: null
 
   function glyphTipEnter(glyph) {
     if (!glyph.tip) return
@@ -162,15 +178,16 @@ Panel {
   }
 
   // ---- Rows are built here rather than in the QML body so the layout below
-  //      stays a plain list of sections.
+  //      stays a plain list of sections. Every label and value is read through
+  //      the plugin's catalogs, so a language change re-renders them in place.
   readonly property var dayRows: {
     var d = root.reading
     if (!d) return []
     return [
-      { label: "SEAL", value: d.seal + " \u00b7 " + d.sealName },
-      { label: "TONE", value: d.tone + " \u00b7 " + d.toneName },
-      { label: "COLOR", value: d.color },
-      { label: "MAYA GLYPH", value: d.glyphName }
+      { label: strings.t("label.seal"), value: d.seal + " \u00b7 " + d.sealName },
+      { label: strings.t("label.tone"), value: d.tone + " \u00b7 " + d.toneName },
+      { label: strings.t("label.color"), value: d.color },
+      { label: strings.t("label.glyph"), value: d.glyphName }
     ]
   }
 
@@ -179,34 +196,44 @@ Panel {
     if (!d) return []
     var bearer = d.yearBearer
     var rows = [
-      { label: "13-MOON DATE", value: d.moonLabel },
+      { label: strings.t("label.date"), value: d.moonLabel },
       {
-        label: "YEAR BEARER",
-        sealColor: bearer.color,
+        label: strings.t("label.bearer"),
+        colorIndex: bearer.colorIndex,
         asset: bearer.asset,
-        tip: Dreamspell.sealFullName(bearer.seal),
-        value: "Kin " + bearer.kin + " \u00b7 " + bearer.color + " " + bearer.toneName + " " + bearer.sealName
+        tip: Dreamspell.sealTip(bearer.seal, strings.t),
+        value: "Kin " + bearer.kin + " \u00b7 " + bearer.fullName
       },
-      { label: "YEAR", value: bearer.startYear + " \u2013 " + (bearer.startYear + 1) },
-      { label: "ANILLO SOLAR", value: bearer.ns + " \u00b7 year " + bearer.yearInRing + " of 52" }
+      {
+        label: strings.t("label.year"),
+        value: bearer.startYear + " \u2013 " + (bearer.startYear + 1)
+      },
+      {
+        label: strings.t("label.ring"),
+        value: bearer.ns + " \u00b7 "
+          + strings.t("unit.of52").replace("%1", bearer.yearInRing)
+      }
     ]
     // The Day Out of Time belongs to no moon, so it has no moon name to show.
     // The moon's value is its full name — tone plus totem, "Electric Deer" —
     // and the day's radial plasma gets the row the moon used to share with it.
     if (d.moon && d.moon.kind === "moon")
       rows.splice(1, 0,
-        { label: "MOON", value: d.moon.fullName },
+        { label: strings.t("label.moon"), value: d.moon.fullName },
         // The plasma's symbol is its chakra mandala, which keeps its own
-        // palette, so this one mark is drawn bare instead of on a plaque.
+        // palette, so this one mark is drawn bare instead of on a plaque. The
+        // plasma names are proper nouns and stay as they are in every language.
         {
-          label: "PLASMA",
+          label: strings.t("label.plasma"),
           value: d.moon.weekday,
           asset: root.plasmaAsset(d.moon.weekday),
           bare: true
         })
     // The Haab is the traditional solar count, read off the Long Count rather
-    // than off the kin, so it sits with the calendar rows.
-    rows.splice(rows.length - 3, 0, { label: "HAAB", value: d.haab ? d.haab.label : "" })
+    // than off the kin, so it sits with the calendar rows. Its month names are
+    // proper nouns too.
+    rows.splice(rows.length - 3, 0,
+      { label: strings.t("label.haab"), value: d.haab ? d.haab.label : "" })
     return rows
   }
 
@@ -215,30 +242,33 @@ Panel {
     if (!d) return []
     return [
       {
-        label: "WAVESPELL",
-        sealColor: d.wavespell.color,
+        label: strings.t("label.wavespell"),
+        colorIndex: d.wavespell.colorIndex,
         asset: d.wavespell.asset,
-        tip: Dreamspell.sealFullName(d.wavespell.seal),
+        tip: Dreamspell.sealTip(d.wavespell.seal, strings.t),
         value: d.wavespell.sealName + " (" + d.wavespell.glyphName + ")"
       },
-      { label: "DAY", value: d.wavespell.day + " of 13" },
-      { label: "OPENED", value: "Kin " + d.wavespell.kin }
+      {
+        label: strings.t("label.day"),
+        value: d.wavespell.day + " " + strings.t("unit.of13")
+      },
+      { label: strings.t("label.opened"), value: "Kin " + d.wavespell.kin }
     ]
   }
 
-  // The castle is its own section in the middle column since L32: it is the
-  // 52-day cycle rather than a wavespell fact, and it is what balances the
-  // middle column against the left one.
+  // The castle is its own section: it is the 52-day cycle rather than a
+  // wavespell fact, and it closes the reading once the smaller cycles are said.
   readonly property var castleRows: {
     var d = root.reading
     if (!d) return []
     return [
-      { label: "CASTLE", value: d.castle + " \u00b7 " + d.castleName }
+      { label: strings.t("label.castle"), value: d.castle + " \u00b7 " + d.castleName }
     ]
   }
 
   function open() {
     refresh()
+    root.viewIndex = 0
     root.controller.show()
     // Set after showing, not before: showing hands the popout coordinator
     // over, which closes whichever panel was open, and that close clears the
@@ -378,7 +408,9 @@ Panel {
           height: root.markSize
           radius: Math.round(root.markSize * 0.24)
           visible: !!modelData.asset && !modelData.bare
-          color: modelData.sealColor ? root.sealColor(modelData.sealColor) : root.contentForeground
+          color: modelData.colorIndex
+            ? root.sealColor(modelData.colorIndex)
+            : root.contentForeground
         }
 
         // A bare mark is drawn on its own: the plasma mandalas keep their own
@@ -413,7 +445,7 @@ Panel {
     id: crossCell
 
     property string caption: ""
-    property string sealColorName: ""
+    property int colorIndex: 0
     property string asset: ""
     property string tip: ""
 
@@ -439,7 +471,9 @@ Panel {
         width: root.crossSize
         height: root.crossSize
         radius: Math.round(root.crossSize * 0.24)
-        color: crossCell.sealColorName ? root.sealColor(crossCell.sealColorName) : root.contentForeground
+        color: crossCell.colorIndex
+          ? root.sealColor(crossCell.colorIndex)
+          : root.contentForeground
 
         SealGlyph {
           anchors.centerIn: parent
@@ -475,14 +509,19 @@ Panel {
     // connection between the click and the thing it opened.
     centerOnBar: false
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(1240))
-    contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
+    contentWidth: panel.fittedContentWidth(Style.space(480))
+    contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight, Style.space(680))
 
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
       onMoveRequested: function(dx, dy) {
-        if (dy === 0) return
+        // Left and right walk the views; up and down stay for a screen too
+        // short to hold one, so nothing is unreachable.
+        if (dx !== 0) {
+          root.setView(root.viewIndex + (dx > 0 ? 1 : -1))
+          return
+        }
         var limit = Math.max(0, scroll.contentHeight - scroll.height)
         scroll.contentY = Math.max(0, Math.min(limit, scroll.contentY + dy * Style.space(40)))
       }
@@ -512,11 +551,18 @@ Panel {
           //      numeral, which is what a Dreamspell tone is written as. The
           //      bundled artwork is a square cartouche, so the plaque follows the
           //      drawing rather than the round seat a bare number would get.
-          //      L33: the tone sits right after the title instead of at the far
-          //      edge, so the pair reads as one compact heading.
+          //      The three parts have fixed widths and the names take whatever
+          //      is left, so a longer name in another language can never push
+          //      the numeral off the panel.
           Item {
+            id: hero
             width: parent.width
-            height: Math.max(plaque.height, Math.max(heroLabels.implicitHeight, toneMark.implicitHeight))
+            height: Math.max(plaque.height, heroLabels.implicitHeight, toneMark.implicitHeight)
+
+            readonly property real gap: Style.space(16)
+            readonly property real toneWidth: Style.space(56)
+            readonly property real labelsWidth: Math.max(0,
+              width - root.plaqueSize - hero.toneWidth - hero.gap * 2)
 
             Rectangle {
               id: plaque
@@ -525,63 +571,34 @@ Panel {
               width: root.plaqueSize
               height: width
               radius: Math.round(width * 0.24)
-              color: root.reading ? root.sealColor(root.reading.color) : root.contentForeground
+              color: root.reading
+                ? root.sealColor(root.reading.colorIndex)
+                : root.contentForeground
 
               SealGlyph {
                 anchors.centerIn: parent
                 extent: Math.round(parent.width * root.glyphFill)
                 asset: root.reading ? root.reading.asset : ""
-                tip: root.reading ? Dreamspell.sealFullName(root.reading.seal) : ""
+                tip: root.reading ? root.reading.sealTip : ""
                 variant: root.glyphFor(plaque.color)
-              }
-            }
-
-            Column {
-              id: toneMark
-              anchors.left: heroLabels.right
-              anchors.leftMargin: Style.space(24)
-              anchors.verticalCenter: parent.verticalCenter
-              // L37: this explicit width is load-bearing: both children bind
-              // their width to it, and without it the mark collapses to zero.
-              width: Style.space(72)
-              spacing: Style.space(1)
-
-              Text {
-                textFormat: Text.PlainText
-                width: parent.width
-                horizontalAlignment: Text.AlignHCenter
-                text: root.toneMark
-                color: root.contentForeground
-                font.family: root.numeralReady ? numerals.name : root.contentFontFamily
-                // L35: a step over the hero's own size, so the numeral holds
-                // its own beside the plaque instead of floating small next to
-                // a drawing three times its height.
-                font.pixelSize: Math.round(root.heroSize * 1.4)
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                width: parent.width
-                horizontalAlignment: Text.AlignHCenter
-                text: root.reading ? "TONE " + root.reading.tone : ""
-                color: Qt.darker(root.contentForeground, 1.6)
-                font.family: root.contentFontFamily
-                font.pixelSize: root.labelSize
-                font.letterSpacing: 1.5
-                font.bold: true
               }
             }
 
             Column {
               id: heroLabels
               anchors.left: plaque.right
-              anchors.leftMargin: Style.space(16)
+              anchors.leftMargin: hero.gap
               anchors.verticalCenter: parent.verticalCenter
+              width: hero.labelsWidth
               spacing: Style.space(2)
 
               Text {
                 textFormat: Text.PlainText
-                text: root.reading ? "Kin " + root.reading.kin : ""
+                width: parent.width
+                elide: Text.ElideRight
+                text: root.reading
+                  ? strings.t("hero.kin").replace("%1", root.reading.kin)
+                  : ""
                 color: root.contentForeground
                 font.family: root.contentFontFamily
                 font.pixelSize: root.heroSize
@@ -590,52 +607,152 @@ Panel {
 
               Text {
                 textFormat: Text.PlainText
-                text: root.reading
-                  ? root.reading.color + " " + root.reading.toneName + " " + root.reading.sealName
-                  : ""
+                width: parent.width
+                elide: Text.ElideRight
+                text: root.reading ? root.reading.fullName : ""
                 color: Qt.darker(root.contentForeground, 1.4)
                 font.family: root.contentFontFamily
                 font.pixelSize: root.heroSubtitleSize
               }
+
+              // What the day is for: the seal's essence, the tone's essence and
+              // the stage the colour is at. Three beats, no sentence to parse,
+              // and the reason a reader can act on the reading instead of only
+              // naming it.
+              Text {
+                textFormat: Text.PlainText
+                width: parent.width
+                wrapMode: Text.WordWrap
+                text: root.reading ? root.reading.energy : ""
+                color: Qt.darker(root.contentForeground, 1.9)
+                font.family: root.contentFontFamily
+                font.pixelSize: root.noteSize
+              }
+            }
+
+            Column {
+              id: toneMark
+              anchors.left: heroLabels.right
+              anchors.leftMargin: hero.gap
+              anchors.verticalCenter: parent.verticalCenter
+              // This explicit width is load-bearing: both children bind their
+              // width to it, and without it the mark collapses to zero.
+              width: hero.toneWidth
+              spacing: Style.space(1)
+
+              Text {
+                id: numeral
+                textFormat: Text.PlainText
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: root.toneMark
+                color: root.contentForeground
+                font.family: root.numeralReady ? numerals.name : root.contentFontFamily
+                // The numeral is a companion to the hero, not a rival: one token
+                // under the kin's own size keeps the pair in one hierarchy.
+                font.pixelSize: Style.font.display
+
+                // The tone is a glyph too, so it answers a hover like one: the
+                // numeral alone says nothing to a reader who does not know the
+                // thirteen tones.
+                property string tip: root.reading ? root.reading.toneTip : ""
+
+                MouseArea {
+                  anchors.fill: parent
+                  acceptedButtons: Qt.NoButton
+                  hoverEnabled: true
+                  onEntered: root.glyphTipEnter(numeral)
+                  onExited: root.glyphTipLeave(numeral)
+                }
+              }
+
+              Text {
+                textFormat: Text.PlainText
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: root.reading
+                  ? strings.t("hero.tone").replace("%1", root.reading.tone)
+                  : ""
+                color: Qt.darker(root.contentForeground, 1.6)
+                font.family: root.contentFontFamily
+                font.pixelSize: root.labelSize
+                font.letterSpacing: 1.5
+                font.bold: true
+              }
             }
           }
 
-          // ---- The reading is laid out as three columns of sections rather
-          //      than one long list: the day and its cycle on the left, the
-          //      13-Moon year in the middle, the oracle cross on the right.
-          //      One long column makes the panel tall and narrow — the same
-          //      shape as the bar it drops from — and the point of opening it
-          //      is to read it comfortably.
+          // ---- The view switcher. Two chips, because two screens: guessing
+          //      that a panel scrolled was the one interaction nobody found, so
+          //      the second screen announces itself and the arrows are printed
+          //      beside the chips rather than left to be discovered.
           Row {
             width: parent.width
-            spacing: root.columnGap
+            spacing: Style.space(10)
 
-            // The oracle column is sized by the cross itself; the other two
-            // split whatever is left, so no value has to be elided (L30).
-            readonly property real oracleWidth: root.crossWidth + Style.space(16)
-            readonly property real columnWidth: Math.floor((width - spacing * 2 - oracleWidth) / 2)
+            ButtonGroup {
+              id: viewSwitch
+              options: root.viewOptions
+              value: root.viewIndex === 0 ? "day" : "cycles"
+              foreground: root.contentForeground
+              fontFamily: root.contentFontFamily
+              fontSize: root.labelSize
+              cursorIndex: -1
+              onChanged: function(value) { root.setView(value === "cycles" ? 1 : 0) }
+            }
 
-            // A section is its own Column so its rows sit tight against their
-            // header, while the outer spacing keeps whole sections apart.
-            // Without that nesting the sections would either drift apart row
-            // by row or run together.
-            // ---- Left: the day's identity, then its 13-day cycle.
+            // The row is three items wide: the chips keep their own width, the
+            // hint sits against the right edge, and this pad takes up the slack.
+            Item {
+              width: Math.max(0, parent.width - viewSwitch.width - viewHint.width
+                - parent.spacing * 2)
+              height: 1
+            }
+
+            Text {
+              id: viewHint
+              anchors.verticalCenter: parent.verticalCenter
+              textFormat: Text.PlainText
+              text: strings.t("view.hint")
+              color: Qt.darker(root.contentForeground, 2.2)
+              font.family: root.contentFontFamily
+              font.pixelSize: root.noteSize
+              font.letterSpacing: 1
+            }
+          }
+
+          // ---- The reading in two views, the shape every native panel uses
+          //      (Elsewhen, weather, the clock): one column of sections, wide
+          //      enough to read and no wider. The order zooms out — the day and
+          //      its relationships first, then its thirteen-day cycle and the
+          //      year and castle around it — and each view is short enough to
+          //      sit entirely on screen at the panel's own size.
+          Item {
+            id: viewHolder
+            width: parent.width
+            // The taller of the two, not the active one: switching views must
+            // not resize the panel under the pointer.
+            height: Math.max(dayColumn.height, cyclesColumn.height)
+
             Column {
-              width: parent.columnWidth
+              id: dayColumn
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
               spacing: root.sectionGap
+              visible: root.viewIndex === 0
 
+              // ---- DAY: the kin's identity.
               Column {
                 width: parent.width
                 spacing: Style.space(2)
 
-                PanelSeparator {
-                  foreground: root.contentForeground
-                }
+                PanelSeparator { foreground: root.contentForeground }
 
                 PanelSectionHeader {
-                  text: "DAY"
+                  text: strings.t("section.day")
                   // The shell's section header dims its text 1.4x; a title has
-                  // to outrank the data under it, so L35 pins it to the panel's
+                  // to outrank the data under it, so this pins it to the panel's
                   // full foreground and gives it enough tracking to read as a
                   // title rather than as one more row label.
                   color: root.contentForeground
@@ -650,145 +767,19 @@ Panel {
                 }
               }
 
+              // ---- ORACLE: the synchronario's Mayan cross — today's seal at the
+              //      centre, the guide above, the analog to the right, the
+              //      antipode to the left, the occult below. It sits high because
+              //      it is the reading's signature, and a signature below the fold
+              //      is no signature at all.
               Column {
                 width: parent.width
                 spacing: Style.space(2)
 
-                PanelSeparator {
-                  foreground: root.contentForeground
-                }
+                PanelSeparator { foreground: root.contentForeground }
 
                 PanelSectionHeader {
-                  text: "WAVESPELL"
-                  color: root.contentForeground
-                  fontFamily: root.contentFontFamily
-                  fontSize: root.sectionSize
-                  font.letterSpacing: 2
-                }
-
-                // The wavespell drawn as its thirteen days: every slot
-                // carries that day's own seal, the day you are on is the
-                // filled one, so the position reads at a glance. The DAY row
-                // below still carries the exact count. L35: the strip sits in
-                // a wrapper with air above and below, so the icons are not
-                // hemmed in by the header and the rows.
-                Item {
-                  width: parent.width
-                  height: wavespellStrip.height + Style.space(12)
-
-                  Row {
-                    id: wavespellStrip
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent ? parent.width : implicitWidth
-                    height: Math.round(root.valueSize * 1.8)
-                    spacing: Style.space(4)
-
-                    readonly property int slots: 13
-                    readonly property real slotWidth: (width - spacing * (slots - 1)) / slots
-
-                    Repeater {
-                      model: wavespellStrip.slots
-
-                      Rectangle {
-                        id: slotPlate
-                        width: wavespellStrip.slotWidth
-                        height: wavespellStrip.height
-                        radius: Math.round(Math.min(width, height) * 0.3)
-                        color: root.reading && index + 1 === root.reading.wavespell.day
-                          ? root.contentForeground
-                          : Qt.darker(root.contentForeground, 2.6)
-
-                        SealGlyph {
-                          anchors.centerIn: parent
-                          extent: Math.round(parent.height * 0.8)
-                          asset: root.reading
-                            ? Dreamspell.sealAsset(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
-                            : ""
-                          tip: root.reading
-                            ? Dreamspell.sealFullName(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
-                            : ""
-                          variant: root.glyphFor(slotPlate.color)
-                        }
-                      }
-                    }
-                  }
-                }
-
-                Repeater {
-                  model: root.wavespellRows
-                  delegate: detailRow
-                }
-              }
-            }
-
-            // ---- Middle: the 13-Moon year the kin sits in, then the castle
-            //      its wavespell turns in.
-            Column {
-              width: parent.columnWidth
-              spacing: root.sectionGap
-
-              Column {
-                width: parent.width
-                spacing: Style.space(2)
-
-                PanelSeparator {
-                  foreground: root.contentForeground
-                }
-
-                PanelSectionHeader {
-                  text: "13-MOON YEAR"
-                  color: root.contentForeground
-                  fontFamily: root.contentFontFamily
-                  fontSize: root.sectionSize
-                  font.letterSpacing: 2
-                }
-
-                Repeater {
-                  model: root.yearRows
-                  delegate: detailRow
-                }
-              }
-
-              Column {
-                width: parent.width
-                spacing: Style.space(2)
-
-                PanelSeparator {
-                  foreground: root.contentForeground
-                }
-
-                PanelSectionHeader {
-                  text: "CASTLE"
-                  color: root.contentForeground
-                  fontFamily: root.contentFontFamily
-                  fontSize: root.sectionSize
-                  font.letterSpacing: 2
-                }
-
-                Repeater {
-                  model: root.castleRows
-                  delegate: detailRow
-                }
-              }
-            }
-
-            // ---- Right: the oracle drawn as the synchronario's Mayan cross:
-            //      today's seal at the centre, the guide above, the analog to
-            //      the right, the antipode to the left, the occult below.
-            Column {
-              width: parent.oracleWidth
-              spacing: root.sectionGap
-
-              Column {
-                width: parent.width
-                spacing: Style.space(2)
-
-                PanelSeparator {
-                  foreground: root.contentForeground
-                }
-
-                PanelSectionHeader {
-                  text: "ORACLE"
+                  text: strings.t("section.oracle")
                   color: root.contentForeground
                   fontFamily: root.contentFontFamily
                   fontSize: root.sectionSize
@@ -800,7 +791,7 @@ Panel {
                   width: parent.width
                   wrapMode: Text.WordWrap
                   text: root.reading
-                    ? "Guide, analog, antipode and occult all carry tone " + root.reading.tone + ", like the kin itself."
+                    ? strings.t("note.oracle").replace("%1", root.reading.tone)
                     : ""
                   color: Qt.darker(root.contentForeground, 1.9)
                   font.family: root.contentFontFamily
@@ -826,10 +817,12 @@ Panel {
                       OracleCrossCell {
                         id: guideCell
                         anchors.horizontalCenter: parent.horizontalCenter
-                        caption: root.reading && root.reading.isGuideSelf ? "GUIDE (SELF)" : "GUIDE"
-                        sealColorName: root.reading ? root.reading.oracle.guide.color : ""
+                        caption: root.reading && root.reading.isGuideSelf
+                          ? strings.t("cross.guideSelf")
+                          : strings.t("cross.guide")
+                        colorIndex: root.reading ? root.reading.oracle.guide.colorIndex : 0
                         asset: root.reading ? root.reading.oracle.guide.asset : ""
-                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.guide.seal) : ""
+                        tip: root.reading ? root.reading.oracle.guide.tip : ""
                       }
                     }
 
@@ -838,26 +831,26 @@ Panel {
 
                       OracleCrossCell {
                         width: root.crossSideWidth
-                        caption: "ANTIPODE"
-                        sealColorName: root.reading ? root.reading.oracle.antipode.color : ""
+                        caption: strings.t("cross.antipode")
+                        colorIndex: root.reading ? root.reading.oracle.antipode.colorIndex : 0
                         asset: root.reading ? root.reading.oracle.antipode.asset : ""
-                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.antipode.seal) : ""
+                        tip: root.reading ? root.reading.oracle.antipode.tip : ""
                       }
 
                       OracleCrossCell {
                         width: root.crossMiddleWidth
-                        caption: "TODAY"
-                        sealColorName: root.reading ? root.reading.color : ""
+                        caption: strings.t("cross.today")
+                        colorIndex: root.reading ? root.reading.colorIndex : 0
                         asset: root.reading ? root.reading.asset : ""
-                        tip: root.reading ? Dreamspell.sealFullName(root.reading.seal) : ""
+                        tip: root.reading ? root.reading.sealTip : ""
                       }
 
                       OracleCrossCell {
                         width: root.crossSideWidth
-                        caption: "ANALOG"
-                        sealColorName: root.reading ? root.reading.oracle.analog.color : ""
+                        caption: strings.t("cross.analog")
+                        colorIndex: root.reading ? root.reading.oracle.analog.colorIndex : 0
                         asset: root.reading ? root.reading.oracle.analog.asset : ""
-                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.analog.seal) : ""
+                        tip: root.reading ? root.reading.oracle.analog.tip : ""
                       }
                     }
 
@@ -868,13 +861,134 @@ Panel {
                       OracleCrossCell {
                         id: occultCell
                         anchors.horizontalCenter: parent.horizontalCenter
-                        caption: "OCCULT"
-                        sealColorName: root.reading ? root.reading.oracle.occult.color : ""
+                        caption: strings.t("cross.occult")
+                        colorIndex: root.reading ? root.reading.oracle.occult.colorIndex : 0
                         asset: root.reading ? root.reading.oracle.occult.asset : ""
-                        tip: root.reading ? Dreamspell.sealFullName(root.reading.oracle.occult.seal) : ""
+                        tip: root.reading ? root.reading.oracle.occult.tip : ""
                       }
                     }
                   }
+                }
+              }
+            }
+
+            Column {
+              id: cyclesColumn
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              spacing: root.sectionGap
+              visible: root.viewIndex === 1
+
+              // ---- WAVESPELL: the thirteen-day cycle, drawn.
+              Column {
+                width: parent.width
+                spacing: Style.space(2)
+
+                PanelSeparator { foreground: root.contentForeground }
+
+                PanelSectionHeader {
+                  text: strings.t("section.wavespell")
+                  color: root.contentForeground
+                  fontFamily: root.contentFontFamily
+                  fontSize: root.sectionSize
+                  font.letterSpacing: 2
+                }
+
+                // The wavespell drawn as its thirteen days: every slot carries
+                // that day's own seal, the day you are on is the filled one, so
+                // the position reads at a glance. The DAY row below still carries
+                // the exact count. The slots are square, like every other plaque
+                // in the panel, and the strip sits in a wrapper with air above and
+                // below so the icons are not hemmed in by the header and rows.
+                Item {
+                  width: parent.width
+                  height: wavespellStrip.height + Style.space(12)
+
+                  Row {
+                    id: wavespellStrip
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent ? parent.width : implicitWidth
+                    spacing: Style.space(4)
+
+                    readonly property int slots: 13
+                    readonly property real slotWidth: (width - spacing * (slots - 1)) / slots
+                    height: slotWidth
+
+                    Repeater {
+                      model: wavespellStrip.slots
+
+                      Rectangle {
+                        id: slotPlate
+                        width: wavespellStrip.slotWidth
+                        height: wavespellStrip.slotWidth
+                        radius: Math.round(Math.min(width, height) * 0.26)
+                        color: root.reading && index + 1 === root.reading.wavespell.day
+                          ? root.contentForeground
+                          : Qt.darker(root.contentForeground, 2.6)
+
+                        SealGlyph {
+                          anchors.centerIn: parent
+                          extent: Math.round(parent.height * 0.76)
+                          asset: root.reading
+                            ? Dreamspell.sealAsset(Dreamspell.sealForKin(root.reading.wavespell.kin + index))
+                            : ""
+                          tip: root.reading
+                            ? Dreamspell.sealTip(
+                                Dreamspell.sealForKin(root.reading.wavespell.kin + index), strings.t)
+                            : ""
+                          variant: root.glyphFor(slotPlate.color)
+                        }
+                      }
+                    }
+                  }
+                }
+
+                Repeater {
+                  model: root.wavespellRows
+                  delegate: detailRow
+                }
+              }
+
+              // ---- 13-MOON YEAR: the year the kin sits in.
+              Column {
+                width: parent.width
+                spacing: Style.space(2)
+
+                PanelSeparator { foreground: root.contentForeground }
+
+                PanelSectionHeader {
+                  text: strings.t("section.year")
+                  color: root.contentForeground
+                  fontFamily: root.contentFontFamily
+                  fontSize: root.sectionSize
+                  font.letterSpacing: 2
+                }
+
+                Repeater {
+                  model: root.yearRows
+                  delegate: detailRow
+                }
+              }
+
+              // ---- CASTLE: the 52-day cycle its wavespell turns in.
+              Column {
+                width: parent.width
+                spacing: Style.space(2)
+
+                PanelSeparator { foreground: root.contentForeground }
+
+                PanelSectionHeader {
+                  text: strings.t("section.castle")
+                  color: root.contentForeground
+                  fontFamily: root.contentFontFamily
+                  fontSize: root.sectionSize
+                  font.letterSpacing: 2
+                }
+
+                Repeater {
+                  model: root.castleRows
+                  delegate: detailRow
                 }
               }
             }
@@ -892,15 +1006,27 @@ Panel {
       // One bubble for every glyph, clamped inside the panel. It sits above
       // the glyph unless the panel's top edge is too close, in which case it
       // flips below, so a glyph near either edge still gets a readable label.
+      // A tip now carries the glyph's three keywords, which is wider than the
+      // panel: the bubble is capped and the text wraps rather than running off
+      // the edge, and the width is measured here instead of read back off the
+      // wrapped label, which would be a binding loop.
       Item {
         id: glyphTipLayer
         anchors.fill: parent
         z: 900
 
+        TextMetrics {
+          id: tipMetrics
+          text: root.glyphTipTarget ? root.glyphTipTarget.tip : ""
+          font.family: root.contentFontFamily
+          font.pixelSize: root.labelSize
+        }
+
         Rectangle {
           id: glyphTipBubble
           visible: root.glyphTipTarget !== null
-          width: glyphTipLabel.implicitWidth + Style.space(20)
+          width: Math.min(tipMetrics.advanceWidth + Style.space(20),
+            glyphTipLayer.width - Style.space(16))
           height: glyphTipLabel.implicitHeight + Style.space(10)
           radius: Style.space(6)
           color: Qt.darker(root.contentForeground, 3.2)
@@ -927,7 +1053,9 @@ Panel {
           Text {
             id: glyphTipLabel
             anchors.centerIn: parent
+            width: parent.width - Style.space(20)
             textFormat: Text.PlainText
+            wrapMode: Text.WordWrap
             text: root.glyphTipTarget ? root.glyphTipTarget.tip : ""
             color: root.contentForeground
             font.family: root.contentFontFamily

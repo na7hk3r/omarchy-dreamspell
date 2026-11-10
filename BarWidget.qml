@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Dreamspell.js" as Dreamspell
 
@@ -17,15 +18,24 @@ BarWidget {
 
   property date displayDate: clock.date
 
+  // The words come from the plugin's own catalogs, following the language
+  // picked under Setup > Language the same way the shell does. The five label
+  // formats and the tooltip all read through it, so a language change re-renders
+  // the pill without a restart.
+  Commons.Translations {
+    id: strings
+    directory: Qt.resolvedUrl("i18n")
+  }
+
   // "toneSeal" (11 Dog) · "toneNameSeal" (Spectral Dog) · "kin" (Kin 50)
   // · "glyph" (buluk Oc) · "icon" (the tone numeral and the seal, drawn)
   readonly property string configuredFormat: String(setting("labelFormat", "toneSeal"))
 
   readonly property var reading: Dreamspell.describeDate(
-    displayDate.getFullYear(), displayDate.getMonth() + 1, displayDate.getDate())
+    displayDate.getFullYear(), displayDate.getMonth() + 1, displayDate.getDate(), strings.t)
 
   readonly property string displayText: reading
-    ? Dreamspell.labelForKin(reading.kin, configuredFormat)
+    ? Dreamspell.labelForKin(reading.kin, configuredFormat, strings.t)
     : ""
   // "11 Dog" reads as two lines in a vertical bar; every format is one or two
   // words, so splitting on the space is enough.
@@ -48,11 +58,9 @@ BarWidget {
     ? ""
     : (root.numeralReady ? reading.toneNumeral : String(reading.tone))
 
-  // The full traditional name, for anyone who hovers and wants to know what
-  // the bar label is short for.
-  readonly property string hoverText: reading
-    ? "Kin " + reading.kin + " · " + reading.color + " " + reading.toneName + " " + reading.sealName
-    : ""
+  // The full traditional name and the three keywords of its seal, for anyone who
+  // hovers and wants to know what the bar label is short for.
+  readonly property string hoverText: Dreamspell.barHover(reading, strings.t)
 
   function refresh() {
     displayDate = new Date()

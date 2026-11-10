@@ -142,6 +142,37 @@ Twelve is `lajkaʼa`, the classical form, rather than the also-current
 `úuk`. The glottal stop is U+02BC and not an apostrophe, and a test pins every
 code point so a lookalike character cannot slip in unnoticed.
 
+## Keyword tables — `SEAL_KEYWORDS`, `TONE_KEYWORDS`, `COLOR_ESSENCES` in `Dreamspell.js`
+
+Every seal and every tone in the 13-Moon calendar carries three keywords — an
+action, a power and an essence — and each of the four colours names the stage a
+day's energy is at (initiation, refinement, transformation, maturation). Those
+are the words the hovers and the panel's energy line show, and they live in the
+model as English tables.
+
+| | |
+|---|---|
+| **Tradition** | Dreamspell / 13-Moon calendar as published by José Argüelles, *The Mayan Factor* (1987) and the Dreamspell material that followed |
+| **Cross-checked against** | The published synchronaries at <https://13lunas.net>, which print the same action/power/essence triad per seal and tone |
+| **Spanish wording** | The Spanish-language synchronaries at <https://13lunas.net> |
+
+The tables are a small, factual vocabulary rather than a text: the names of the
+twenty seals and the thirteen tones are the calendar's own, and they are the same
+in a calculator, a synchronary and this panel. The Spanish renderings in
+`i18n/es.json` follow the Spanish published material, including the grammatical
+gender each seal and totem takes.
+
+---
+
+## Translations — `i18n/`
+
+The string catalogues (`i18n/en.json`, `i18n/es.json`) are original work of this
+plugin and stay under the MIT licence, like the code. They translate the
+calendar's vocabulary — seals, tones, colours, castles, totems — as well as the
+panel's chrome, with the Spanish word order and adjectival agreement handled as
+data (`hero.fullName`, `seal.N.gender`, `tone.N.f`) rather than as rules in the
+model.
+
 ## Preview banner — `preview.png`
 
 The image the repository and the marketplace listing show. It frames a real
