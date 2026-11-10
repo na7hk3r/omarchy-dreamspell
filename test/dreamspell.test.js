@@ -546,3 +546,147 @@ test('the reading carries the Haab date and the moon full name', () => {
   assert.equal(d.moon.fullName, 'Electric Deer');
   assert.equal(d.moonLabel, 'Moon 3 \u00b7 Day 26');
 });
+
+// ------------------------------------------------------------ i18n catalogs
+//
+// The model owns the maths and the canonical English; the words come from the
+// plugin's own catalogs. These tests hold the two things a catalog can get
+// wrong without the panel ever failing to load: a key that only one language
+// has, and a template whose placeholders do not match.
+
+const CATALOG_DIR = path.join(__dirname, '..', 'i18n');
+
+function catalog(language) {
+  return JSON.parse(fs.readFileSync(path.join(CATALOG_DIR, language + '.json'), 'utf8'));
+}
+
+function translator(cat) {
+  // Commons.Translations returns the key itself when the catalog has no entry,
+  // so the model's every fallback is exercised with the same shape.
+  return (key) => (key in cat ? cat[key] : key);
+}
+
+const EN = catalog('en');
+const ES = catalog('es');
+const T_EN = translator(EN);
+const T_ES = translator(ES);
+
+test('i18n: both catalogs are flat objects of non-empty strings', () => {
+  for (const [language, cat] of [['en', EN], ['es', ES]]) {
+    assert.ok(Object.keys(cat).length > 0, language + ' is empty');
+    for (const [key, value] of Object.entries(cat)) {
+      assert.equal(typeof value, 'string', language + ': ' + key + ' is not a string');
+      assert.ok(value.trim().length > 0, language + ': ' + key + ' is blank');
+    }
+  }
+});
+
+test('i18n: every English key exists in Spanish', () => {
+  const missing = Object.keys(EN).filter((key) => !(key in ES));
+  assert.deepEqual(missing, []);
+});
+
+test('i18n: every Spanish template keeps the placeholders its English twin uses', () => {
+  for (const key of Object.keys(EN)) {
+    const enSlots = (EN[key].match(/%\d/g) || []).sort();
+    const esSlots = (ES[key].match(/%\d/g) || []).sort();
+    assert.deepEqual(esSlots, enSlots, key + ' placeholders differ');
+  }
+});
+
+test('i18n: the catalogs cover every seal, tone, colour, castle and totem', () => {
+  const needed = [];
+  for (let i = 1; i <= 20; i++) {
+    needed.push('seal.' + i, 'seal.' + i + '.action', 'seal.' + i + '.power', 'seal.' + i + '.essence');
+  }
+  for (let i = 1; i <= 13; i++) {
+    needed.push('tone.' + i, 'tone.' + i + '.action', 'tone.' + i + '.power', 'tone.' + i + '.essence');
+    needed.push('totem.' + i);
+  }
+  for (let i = 1; i <= 4; i++) needed.push('color.' + i, 'color.' + i + '.essence');
+  for (let i = 1; i <= 5; i++) needed.push('castle.' + i);
+
+  for (const [language, cat] of [['en', EN], ['es', ES]]) {
+    const missing = needed.filter((key) => !(key in cat));
+    assert.deepEqual(missing, [], language + ' is missing entries');
+  }
+});
+
+test('i18n: Spanish inflects the adjectives, so every seal and totem declares a gender', () => {
+  for (let i = 1; i <= 20; i++) {
+    assert.equal(ES['seal.' + i + '.gender'], D.sealGender(i, T_ES));
+  }
+  for (let i = 1; i <= 13; i++) {
+    assert.equal(ES['totem.' + i + '.gender'], D.totemGender(i, T_ES));
+  }
+  // The feminine forms are the ones that actually differ; a catalog that only
+  // shipped the masculine would agree with itself and still read wrong.
+  assert.equal(ES['tone.8.f'], 'Galáctica');
+  assert.equal(ES['color.1.f'], 'Roja');
+});
+
+test('i18n: with no translator the model still speaks its canonical English', () => {
+  const d = D.describeDate(2026, 10, 15);
+  assert.equal(d.fullName, 'White Spectral Dog');
+  assert.equal(d.energy, 'Energy: Loyalty · Liberation · Refinement');
+  assert.equal(d.sealTip, 'Dog (Oc) — Action: Love · Power: Heart · Essence: Loyalty');
+  assert.equal(d.toneTip, 'Spectral — Action: Dissolve · Power: Release · Essence: Liberation');
+  assert.equal(d.moonLabel, 'Moon 3 · Day 26');
+  // A lookup that answers nothing must fall back rather than print keys.
+  const blank = () => undefined;
+  const same = D.describeDate(2026, 10, 15, blank);
+  assert.equal(same.fullName, 'White Spectral Dog');
+  assert.equal(same.energy, 'Energy: Loyalty · Liberation · Refinement');
+});
+
+test('i18n: the Spanish reading is translated and agrees in gender', () => {
+  const d = D.describeDate(2026, 10, 15, T_ES);
+  assert.equal(d.fullName, 'Perro Espectral Blanco');
+  assert.equal(d.energy, 'Energía: Lealtad · Liberación · Refinamiento');
+  assert.equal(d.sealTip, 'Perro (Oc) — Acción: Amar · Poder: Corazón · Esencia: Lealtad');
+  assert.equal(d.toneTip, 'Espectral — Acción: Disolver · Poder: Liberar · Esencia: Liberación');
+  assert.equal(d.colorTip, 'Blanco — Refinamiento');
+  assert.equal(d.moon.fullName, 'Ciervo Eléctrico');
+  assert.equal(d.moonLabel, 'Luna 3 · Día 26');
+  assert.equal(d.castleName, 'Castillo Rojo Este del Girar');
+  assert.deepEqual(
+    ['guide', 'analog', 'antipode', 'occult'].map((arm) => d.oracle[arm].sealName),
+    ['Perro', 'Luna', 'Sol', 'Mono']
+  );
+
+  // Feminine seals take the feminine adjective: the year bearer is Blue Moon.
+  const bearer = d.yearBearer;
+  assert.equal(bearer.fullName, 'Luna Galáctica Roja');
+  assert.equal(D.describeDate(2026, 3, 5, T_ES).moon.fullName, 'Halcón Galáctico');
+  assert.equal(D.describeDate(2026, 6, 1, T_ES).moon.fullName, 'Conejo Cristal');
+});
+
+test('i18n: the bar label follows the language and its word order', () => {
+  assert.equal(D.labelForKin(50, 'toneSeal'), '11 Dog');
+  assert.equal(D.labelForKin(50, 'toneSeal', T_ES), '11 Perro');
+  assert.equal(D.labelForKin(50, 'toneNameSeal'), 'Spectral Dog');
+  assert.equal(D.labelForKin(50, 'toneNameSeal', T_ES), 'Perro Espectral');
+  assert.equal(D.labelForKin(50, 'kin', T_ES), 'Kin 50');
+  assert.equal(D.labelForKin(50, 'icon', T_ES), '');
+  // The glyph format is the Mayan day sign, which is a proper name in every
+  // language, and its tone is the Mayan number word.
+  assert.equal(D.labelForKin(50, 'glyph', T_ES), 'buluk Oc');
+});
+
+test('i18n: translating a reading never moves a number', () => {
+  const plain = D.describeDate(2026, 10, 15);
+  const spanish = D.describeDate(2026, 10, 15, T_ES);
+  const numeric = ['kin', 'seal', 'tone', 'colorIndex', 'castle'];
+  for (const key of numeric) assert.equal(spanish[key], plain[key], key);
+  assert.equal(spanish.wavespell.kin, plain.wavespell.kin);
+  assert.equal(spanish.wavespell.day, plain.wavespell.day);
+  assert.equal(spanish.haab.label, plain.haab.label);
+  assert.equal(spanish.yearBearer.ns, plain.yearBearer.ns);
+});
+
+test('i18n: the bar tooltip carries the full name and the seal keywords', () => {
+  const d = D.describeDate(2026, 10, 15, T_EN);
+  assert.equal(D.barHover(d, T_EN), 'Kin 50 · White Spectral Dog — Love · Heart · Loyalty');
+  const es = D.describeDate(2026, 10, 15, T_ES);
+  assert.equal(D.barHover(es, T_ES), 'Kin 50 · Perro Espectral Blanco — Amar · Corazón · Lealtad');
+});
